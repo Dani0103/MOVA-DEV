@@ -1,18 +1,32 @@
-export async function loginFake(email, password) {
-  // simulamos delay de red
-  await new Promise((resolve) => setTimeout(resolve, 800));
+import { apiFetch } from "../config/api";
 
-  if (!email || !password) {
-    throw new Error("Email y contraseña requeridos");
-  }
-
-  // simulación backend
-  return {
-    token: "fake-jwt-token-123456",
-    user: {
-      id: 1,
-      name: "Usuario Demo",
+// REGISTRO APP
+export async function registerUser({
+  name,
+  email,
+  password,
+  country,
+  currency,
+}) {
+  return await apiFetch("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
       email,
-    },
-  };
+      password,
+      country,
+      currency,
+    }),
+  });
+}
+
+// LOGIN APP
+export async function loginUser(email, password) {
+  return await apiFetch("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
 }

@@ -1,6 +1,5 @@
 import { View, TextInput, StyleSheet } from "react-native";
-
-const INPUT_HEIGHT = 50;
+import { useTheme } from "../../theme/useTheme";
 
 export default function FormInput({
   value,
@@ -10,17 +9,32 @@ export default function FormInput({
   keyboardType = "default",
   autoCapitalize = "sentences",
 }) {
+  const theme = useTheme();
+
   return (
-    <View style={styles.wrapper}>
+    <View
+      style={[
+        styles.wrapper,
+        {
+          borderColor: theme.label,
+          backgroundColor: theme.inputBackground,
+        },
+      ]}
+    >
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#999"
+        placeholderTextColor={theme.label}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            color: theme.text,
+          },
+        ]}
       />
     </View>
   );
@@ -29,16 +43,12 @@ export default function FormInput({
 const styles = StyleSheet.create({
   wrapper: {
     borderWidth: 1,
-    borderColor: "#444",
-    borderRadius: 8,
-    height: INPUT_HEIGHT,
+    height: 40,
     justifyContent: "center",
     paddingHorizontal: 12,
     marginBottom: 14,
-    backgroundColor: "black",
   },
   input: {
-    color: "#fff",
     fontSize: 16,
   },
 });

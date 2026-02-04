@@ -1,58 +1,73 @@
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { loginFake } from "../services/authService";
+import { loginUser } from "../services/authService";
+import { validateLogin } from "../validators/loginValidator";
+import { useTheme } from "../theme/useTheme";
+
+// Componentes reutilizables
+import FormInput from "../components/form/FormInput";
+
+// Alertas
+import { showAlert } from "../utils/showAlert";
+import { parseError } from "../utils/parseError";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loading } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+
+  const { login } = useAuth();
+  const theme = useTheme();
 
   const handleLogin = async () => {
     try {
-      const data = await loginFake(email, password);
+      setSubmitting(true);
+
+      const validationError = validateLogin({ email, password });
+      if (validationError) {
+        showAlert("Error", validationError);
+        return;
+      }
+
+      const data = await loginUser(email, password);
       await login(data);
     } catch (error) {
-      Alert.alert("Error", error.message);
+      showAlert("Error", parseError(error));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Iniciar sesión</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.title, { color: theme.text }]}>Iniciar sesión</Text>
 
-      <TextInput
-        placeholder="Email"
+      {/* Email */}
+      <Text style={[styles.label, { color: theme.label }]}>
+        Correo electrónico
+      </Text>
+      <FormInput
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
-        style={styles.input}
+        keyboardType="email-address"
       />
 
-      <TextInput
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        style={styles.input}
-      />
+      {/* Password */}
+      <Text style={[styles.label, { color: theme.label }]}>Contraseña</Text>
+      <FormInput value={password} onChangeText={setPassword} secureTextEntry />
 
       <Button
-        title={loading ? "Entrando..." : "Entrar"}
+        title={submitting ? "Entrando..." : "Entrar"}
         onPress={handleLogin}
-        disabled={loading}
+        disabled={submitting}
       />
 
       <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={styles.link}>¿No tienes cuenta? Regístrate</Text>
+        <Text style={[styles.link, { color: theme.link }]}>
+          ¿No tienes cuenta? Regístrate
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -63,22 +78,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 24,
-    backgroundColor: "black",
   },
   title: {
     fontSize: 26,
     marginBottom: 24,
     textAlign: "center",
     fontWeight: "600",
-    color: "#fff",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#444",
-    marginBottom: 14,
-    padding: 12,
-    borderRadius: 8,
-    color: "#fff",
+  label: {
+    marginBottom: 6,
+    marginTop: 8,
+    fontSize: 14,
   },
-  link: { marginTop: 16, textAlign: "center", color: "#60a5fa" },
+  link: {
+    marginTop: 16,
+    textAlign: "center",
+  },
 });

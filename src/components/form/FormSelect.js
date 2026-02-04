@@ -1,7 +1,6 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Platform } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-
-// const INPUT_HEIGHT = 50;
+import { useTheme } from "../../theme/useTheme";
 
 export default function FormSelect({
   value,
@@ -10,16 +9,37 @@ export default function FormSelect({
   loading = false,
   placeholder = "Seleccionar",
 }) {
+  const theme = useTheme();
+
+  const isPlaceholder = !value;
+
   return (
-    <View style={styles.pickerContainer}>
+    <View
+      style={[
+        styles.pickerContainer,
+        {
+          borderColor: theme.label,
+          backgroundColor: theme.inputBackground,
+        },
+      ]}
+    >
       <Picker
         selectedValue={value}
         onValueChange={onValueChange}
-        style={styles.picker}
-        dropdownIconColor="#fff"
+        style={[
+          styles.picker,
+          {
+            color: isPlaceholder ? theme.label : theme.text,
+            backgroundColor: theme.inputBackground,
+          },
+        ]}
+        dropdownIconColor={theme.text}
       >
+        {/* Placeholder visible */}
+        <Picker.Item label={placeholder} value="" />
+
         {loading ? (
-          <Picker.Item label="Cargando monedas..." value="" />
+          <Picker.Item label="Cargando..." value="__loading" />
         ) : (
           items.map((item) => (
             <Picker.Item key={item.code} label={item.label} value={item.code} />
@@ -33,16 +53,11 @@ export default function FormSelect({
 const styles = StyleSheet.create({
   pickerContainer: {
     borderWidth: 1,
-    borderColor: "#444",
-    borderRadius: 8,
     marginBottom: 14,
-    height: 50,
+    height: 40,
     justifyContent: "center",
   },
   picker: {
-    color: "#fff",
-    borderRadius: 8,
-    backgroundColor: "black",
-    height: 50,
+    height: 40,
   },
 });
