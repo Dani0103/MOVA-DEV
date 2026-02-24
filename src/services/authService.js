@@ -2,27 +2,29 @@ import { apiFetch } from "../config/api";
 
 // REGISTRO APP
 export async function registerUser({
-  name,
+  nombre,
+  apellido,
   email,
+  nacionalidad,
+  moneda,
   password,
-  country,
-  currency,
 }) {
-  return await apiFetch("/auth/register", {
+  return await apiFetch("/register", {
     method: "POST",
     body: JSON.stringify({
-      name,
+      nombre,
+      apellido,
       email,
+      nacionalidad,
+      moneda,
       password,
-      country,
-      currency,
     }),
   });
 }
 
 // LOGIN APP
 export async function loginUser(email, password) {
-  return await apiFetch("/auth/login", {
+  return await apiFetch("/login", {
     method: "POST",
     body: JSON.stringify({
       email,

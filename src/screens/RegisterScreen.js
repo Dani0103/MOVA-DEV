@@ -16,29 +16,37 @@ import { parseError } from "../utils/parseError";
 
 export default function RegisterScreen({ navigation }) {
   // Obligatorios
-  const [name, setName] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
+  const [nacionalidad, setNacionalidad] = useState("");
+  const [moneda, setMoneda] = useState("COP");
   const [password, setPassword] = useState("");
-
-  // Opcionales
-  const [country, setCountry] = useState("");
-  const [currency, setCurrency] = useState("COP");
+  const [confirmedPassword, setConfirmedPassword] = useState("");
 
   // Monedas dinámicas
   const [currencies, setCurrencies] = useState([]);
   const [loadingCurrencies, setLoadingCurrencies] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const theme = useTheme();
 
   const handleRegister = async () => {
     try {
+      debugger;
       setSubmitting(true);
 
       const validationError = validateRegister({
-        name,
+        nombre,
+        apellido,
         email,
+        nacionalidad,
+        moneda,
         password,
+        confirmedPassword,
       });
 
       if (validationError) {
@@ -47,11 +55,13 @@ export default function RegisterScreen({ navigation }) {
       }
 
       const data = await registerUser({
-        name,
+        nombre,
+        apellido,
         email,
+        nacionalidad,
+        moneda,
         password,
-        country,
-        currency,
+        confirmedPassword,
       });
 
       await login(data);
@@ -98,15 +108,17 @@ export default function RegisterScreen({ navigation }) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.title, { color: theme.text }]}>Crear cuenta</Text>
 
-      {/* Nombre */}
-      <Text style={[styles.label, { color: theme.label }]}>
-        Nombre completo
-      </Text>
-      <FormInput value={name} onChangeText={setName} />
+      {/* Nombres*/}
+      <Text style={[styles.label, { color: theme.label }]}>Nombre/s *</Text>
+      <FormInput value={nombre} onChangeText={setNombre} />
+
+      {/* Apellidos */}
+      <Text style={[styles.label, { color: theme.label }]}>Apellido/s *</Text>
+      <FormInput value={apellido} onChangeText={setApellido} />
 
       {/* Email */}
       <Text style={[styles.label, { color: theme.label }]}>
-        Correo electrónico
+        Correo electrónico *
       </Text>
       <FormInput
         value={email}
@@ -115,26 +127,42 @@ export default function RegisterScreen({ navigation }) {
         keyboardType="email-address"
       />
 
-      {/* Password */}
-      <Text style={[styles.label, { color: theme.label }]}>Contraseña</Text>
-      <FormInput value={password} onChangeText={setPassword} secureTextEntry />
-
       {/* País */}
-      <Text style={[styles.label, { color: theme.label }]}>
-        País (opcional)
-      </Text>
-      <FormInput value={country} onChangeText={setCountry} />
+      <Text style={[styles.label, { color: theme.label }]}>Nacionalidad *</Text>
+      <FormInput value={nacionalidad} onChangeText={setNacionalidad} />
 
       {/* Moneda */}
       <Text style={[styles.label, { color: theme.label }]}>
-        Moneda preferida (opcional)
+        Moneda preferida *
       </Text>
       <FormSelect
-        value={currency}
-        onValueChange={setCurrency}
+        value={moneda}
+        onValueChange={setMoneda}
         items={currencies}
         loading={loadingCurrencies}
         placeholder="Selecciona una moneda"
+      />
+
+      {/* Password */}
+      <Text style={[styles.label, { color: theme.label }]}>Contraseña *</Text>
+      <FormInput
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={!showPassword}
+        rightIcon={showPassword ? "eye-off" : "eye"}
+        onRightIconPress={() => setShowPassword((prev) => !prev)}
+      />
+
+      {/* confirmacion Password */}
+      <Text style={[styles.label, { color: theme.label }]}>
+        Confirmar contraseña *
+      </Text>
+      <FormInput
+        value={confirmedPassword}
+        onChangeText={setConfirmedPassword}
+        secureTextEntry={!showConfirmPassword}
+        rightIcon={showConfirmPassword ? "eye-off" : "eye"}
+        onRightIconPress={() => setShowConfirmPassword((prev) => !prev)}
       />
 
       <Button
@@ -143,7 +171,10 @@ export default function RegisterScreen({ navigation }) {
         disabled={submitting}
       />
 
-      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate("Login")}
+        disabled={submitting}
+      >
         <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
       </TouchableOpacity>
     </View>
@@ -153,12 +184,12 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "statrt",
     padding: 24,
+    overflow: "auto",
   },
   title: {
     fontSize: 26,
-    marginBottom: 24,
     textAlign: "center",
     fontWeight: "600",
   },

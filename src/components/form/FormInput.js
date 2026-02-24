@@ -1,4 +1,5 @@
-import { View, TextInput, StyleSheet } from "react-native";
+import { View, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme/useTheme";
 
 export default function FormInput({
@@ -8,6 +9,8 @@ export default function FormInput({
   secureTextEntry = false,
   keyboardType = "default",
   autoCapitalize = "sentences",
+  rightIcon,
+  onRightIconPress,
 }) {
   const theme = useTheme();
 
@@ -33,9 +36,20 @@ export default function FormInput({
           styles.input,
           {
             color: theme.text,
+            paddingRight: rightIcon ? 34 : 0, // ✅ espacio para icono
           },
         ]}
       />
+
+      {rightIcon && (
+        <TouchableOpacity
+          onPress={onRightIconPress}
+          style={styles.icon}
+          activeOpacity={0.7}
+        >
+          <Ionicons name={rightIcon} size={20} color={theme.label} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -47,8 +61,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 12,
     marginBottom: 14,
+    position: "relative",
   },
   input: {
     fontSize: 16,
+  },
+  icon: {
+    position: "absolute",
+    right: 10,
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
