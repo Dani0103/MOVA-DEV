@@ -7,7 +7,6 @@ export function validateRegister({
   password,
   confirmedPassword,
 }) {
-  debugger;
   if (!nombre?.trim()) {
     return "El nombre es obligatorio";
   }

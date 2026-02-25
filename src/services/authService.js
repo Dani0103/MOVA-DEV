@@ -8,6 +8,7 @@ export async function registerUser({
   nacionalidad,
   moneda,
   password,
+  confirmedPassword,
 }) {
   return await apiFetch("/register", {
     method: "POST",
@@ -18,6 +19,7 @@ export async function registerUser({
       nacionalidad,
       moneda,
       password,
+      password_confirmation: confirmedPassword,
     }),
   });
 }

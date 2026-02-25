@@ -32,11 +32,11 @@ export default function RegisterScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const { login } = useAuth();
   const theme = useTheme();
 
   const handleRegister = async () => {
     try {
-      debugger;
       setSubmitting(true);
 
       const validationError = validateRegister({

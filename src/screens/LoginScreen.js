@@ -15,6 +15,7 @@ import { parseError } from "../utils/parseError";
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
 
   const { login } = useAuth();

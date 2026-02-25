@@ -26,12 +26,15 @@ export function AuthProvider({ children }) {
     restoreSession();
   }, []);
 
-  const login = async ({ token, user }) => {
+  const login = async ({ token, usuario }) => {
     setLoading(true);
+
     await storage.set(AUTH_KEYS.TOKEN, token);
-    await storage.set(AUTH_KEYS.USER, user);
+    await storage.set(AUTH_KEYS.USER, usuario); // ✔ guardar usuario real
+
     setToken(token);
-    setUser(user);
+    setUser(usuario);
+
     setLoading(false);
   };
 
