@@ -1,39 +1,72 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import Header from "../components/layout/Header";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useAuth } from "../context/AuthContext";
 
 export default function HomeScreen() {
+  const { user } = useAuth();
+
+  // Datos mock (luego los conectamos al backend)
+  const ingresos = 4000000;
+  const gastos = 2750000;
+  const ahorro = ingresos - gastos;
+  const saldoDisponible = 8250000;
+
   return (
-    <View style={styles.container}>
-      <Header />
-
-      <View style={styles.content}>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container}>
+        {/* Saldo disponible */}
         <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Saldo disponible</Text>
-          <Text style={styles.balanceAmount}>$ 3.250.000</Text>
+          <Text style={styles.balanceLabel}>Saldo Disponible</Text>
+          <Text style={styles.balanceAmount}>
+            $ {saldoDisponible.toLocaleString()}
+          </Text>
         </View>
 
+        {/* Resumen mensual */}
         <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Ingresos</Text>
-            <Text style={styles.income}>+$ 4.000.000</Text>
+          <View style={styles.incomeCard}>
+            <Text style={styles.cardTitle}>Ingresos</Text>
+            <Text style={styles.income}>+$ {ingresos.toLocaleString()}</Text>
           </View>
 
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Gastos</Text>
-            <Text style={styles.expense}>-$ 750.000</Text>
+          <View style={styles.expenseCard}>
+            <Text style={styles.cardTitle}>Gastos</Text>
+            <Text style={styles.expense}>-$ {gastos.toLocaleString()}</Text>
           </View>
         </View>
 
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Text style={styles.actionText}>+ Gasto</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionBtn}>
-            <Text style={styles.actionText}>+ Ingreso</Text>
-          </TouchableOpacity>
+        {/* Ahorro del mes */}
+        <View style={styles.savingsCard}>
+          <Text style={styles.cardTitle}>Ahorro del Mes</Text>
+          <Text
+            style={[
+              styles.savingsAmount,
+              { color: ahorro >= 0 ? "#4ADE80" : "#F87171" },
+            ]}
+          >
+            $ {ahorro.toLocaleString()}
+          </Text>
         </View>
-      </View>
+
+        {/* Últimos movimientos */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+
+          <View style={styles.transaction}>
+            <Text style={styles.transactionText}>Arriendo</Text>
+            <Text style={styles.expense}>- $ 1.200.000</Text>
+          </View>
+
+          <View style={styles.transaction}>
+            <Text style={styles.transactionText}>Salario</Text>
+            <Text style={styles.income}>+ $ 3.000.000</Text>
+          </View>
+
+          <View style={styles.transaction}>
+            <Text style={styles.transactionText}>Mercado</Text>
+            <Text style={styles.expense}>- $ 320.000</Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -42,80 +75,88 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0F172A",
-    paddingTop: 50,
-  },
-
-  content: {
-    flex: 1,
-    backgroundColor: "#020617",
     padding: 20,
   },
-
+  welcome: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 20,
+  },
   balanceCard: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#1E293B",
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  balanceLabel: {
+    color: "#94A3B8",
+  },
+  balanceAmount: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#38BDF8",
+    marginTop: 8,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  incomeCard: {
+    backgroundColor: "#064E3B",
+    padding: 15,
+    borderRadius: 12,
+    width: "48%",
+  },
+  expenseCard: {
+    backgroundColor: "#7F1D1D",
+    padding: 15,
+    borderRadius: 12,
+    width: "48%",
+  },
+  cardTitle: {
+    color: "white",
+  },
+  income: {
+    color: "#4ADE80",
+    fontWeight: "bold",
+    marginTop: 5,
+  },
+  expense: {
+    color: "#F87171",
+    fontWeight: "bold",
+    marginTop: 5,
+  },
+  section: {
+    marginTop: 10,
+  },
+  sectionTitle: {
+    color: "white",
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  transaction: {
+    backgroundColor: "#1E293B",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  transactionText: {
+    color: "white",
+  },
+  savingsCard: {
+    backgroundColor: "#1E293B",
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
   },
 
-  balanceLabel: {
-    color: "#94A3B8",
-    fontSize: 13,
-  },
-
-  balanceAmount: {
-    color: "white",
-    fontSize: 28,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-
-  summaryRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 20,
-  },
-
-  summaryCard: {
-    flex: 1,
-    backgroundColor: "#0F172A",
-    padding: 16,
-    borderRadius: 14,
-  },
-
-  summaryTitle: {
-    color: "#94A3B8",
-    fontSize: 12,
-    marginBottom: 6,
-  },
-
-  income: {
-    color: "#4ADE80",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  expense: {
-    color: "#F87171",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  actionsRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-
-  actionBtn: {
-    flex: 1,
-    backgroundColor: "#1E293B",
-    padding: 14,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-
-  actionText: {
-    color: "white",
-    fontWeight: "600",
+  savingsAmount: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 8,
   },
 });

@@ -1,24 +1,57 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Header() {
   const { user, logout } = useAuth();
+  const navigation = useNavigation();
+
+  const routeName = useNavigationState((state) => {
+    const route = state.routes[state.index];
+
+    // Si es stack anidado (como CuentasStack)
+    if (route.state) {
+      const nestedRoute = route.state.routes[route.state.index];
+      return nestedRoute.name;
+    }
+
+    return route.name;
+  });
+
+  const isHome = routeName === "Home";
+
+  const formatTitle = (name) => {
+    if (name === "CuentasHome") return "Cuentas";
+
+    return name
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+  };
 
   return (
     <View style={styles.header}>
-      <View style={styles.userContainer}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{user?.nombre?.charAt(0)}</Text>
-        </View>
+      {/* Botón menú */}
+      <TouchableOpacity onPress={() => navigation.openDrawer()}>
+        <Ionicons name="menu" size={26} color="white" />
+      </TouchableOpacity>
 
-        <View>
+      {/* Contenido dinámico */}
+      {isHome ? (
+        <View style={styles.centerContent}>
           <Text style={styles.welcome}>Hola</Text>
-          <Text style={styles.name}>
+          <Text style={styles.name} numberOfLines={1}>
             {user?.nombre}, {user?.apellido}
           </Text>
         </View>
-      </View>
+      ) : (
+        <View style={styles.centerContent}>
+          <Text style={styles.title}>{formatTitle(routeName)}</Text>
+        </View>
+      )}
 
+      {/* Logout */}
       <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
         <Text style={styles.logoutText}>Salir</Text>
       </TouchableOpacity>
@@ -29,31 +62,16 @@ export default function Header() {
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: "#0F172A",
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 10,
+    paddingTop: 50,
   },
 
-  userContainer: {
-    flexDirection: "row",
+  centerContent: {
+    flex: 1,
     alignItems: "center",
-    gap: 12,
-  },
-
-  avatar: {
-    width: 42,
-    height: 42,
-    backgroundColor: "#1E293B",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 21, // ✔ importante para que sea avatar real
-  },
-
-  avatarText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
   },
 
   welcome: {
@@ -67,11 +85,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
+  title: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
   logoutBtn: {
     backgroundColor: "#1E293B",
     paddingHorizontal: 14,
     paddingVertical: 6,
-    // borderRadius: 8,
+    borderRadius: 20,
   },
 
   logoutText: {
