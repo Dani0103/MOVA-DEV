@@ -12,34 +12,66 @@ export default function CrearMovimientoScreen({
   navigation,
   movimientos,
   setMovimientos,
+  cuentas,
+  setCuentas,
 }) {
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
   const [tipo, setTipo] = useState("gasto");
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
+  const [error, setError] = useState("");
 
   const handleGuardar = () => {
+    if (!descripcion || !monto || !cuentaSeleccionada) {
+      setError("Completa todos los campos");
+      return;
+    }
+
+    const montoNumerico = parseFloat(monto);
+
     const nuevoMovimiento = {
       id: Date.now(),
       descripcion,
-      monto: parseFloat(monto),
+      monto: montoNumerico,
       tipo,
+      cuentaId: cuentaSeleccionada.id,
     };
 
     setMovimientos([...movimientos, nuevoMovimiento]);
+
+    // 🔥 Actualizar saldo de la cuenta
+    const cuentasActualizadas = cuentas.map((c) => {
+      if (c.id === cuentaSeleccionada.id) {
+        const nuevoSaldo =
+          tipo === "ingreso"
+            ? c.saldo + montoNumerico
+            : c.saldo - montoNumerico;
+
+        return { ...c, saldo: nuevoSaldo };
+      }
+      return c;
+    });
+
+    setCuentas(cuentasActualizadas);
+
     navigation.goBack();
   };
 
   return (
     <ScrollView style={styles.container}>
-      {/* <Text style={styles.title}>Nuevo Movimiento</Text> */}
+      <Text style={styles.title}>Nuevo Movimiento</Text>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <TextInput
         placeholder="Descripción"
         placeholderTextColor="#94A3B8"
         style={styles.input}
         value={descripcion}
-        onChangeText={setDescripcion}
+        onChangeText={(v) => {
+          setDescripcion(v);
+          setError("");
+        }}
       />
 
       <TextInput
@@ -48,25 +80,79 @@ export default function CrearMovimientoScreen({
         keyboardType="numeric"
         style={styles.input}
         value={monto}
-        onChangeText={setMonto}
+        onChangeText={(v) => {
+          setMonto(v);
+          setError("");
+        }}
       />
 
+      {/* Tipo */}
+      <Text style={styles.label}>Tipo</Text>
       <View style={styles.tipoContainer}>
         <TouchableOpacity
           style={[styles.tipoButton, tipo === "ingreso" && styles.tipoActive]}
           onPress={() => setTipo("ingreso")}
         >
-          <Text style={styles.tipoText}>Ingreso</Text>
+          <Text
+            style={[
+              styles.tipoText,
+              tipo === "ingreso" && styles.tipoTextActive,
+            ]}
+          >
+            Ingreso
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.tipoButton, tipo === "gasto" && styles.tipoActive]}
           onPress={() => setTipo("gasto")}
         >
-          <Text style={styles.tipoText}>Gasto</Text>
+          <Text
+            style={[styles.tipoText, tipo === "gasto" && styles.tipoTextActive]}
+          >
+            Gasto
+          </Text>
         </TouchableOpacity>
       </View>
 
+      {/* Cuenta */}
+      <Text style={styles.label}>Cuenta</Text>
+      {!cuentas || cuentas.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Primero debes crear una cuenta</Text>
+
+          <TouchableOpacity
+            style={styles.createAccountBtn}
+            onPress={() => navigation.navigate("Cuentas")}
+          >
+            <Text style={styles.createAccountText}>Crear Cuenta</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.cuentaContainer}>
+          {cuentas.map((c) => (
+            <TouchableOpacity
+              key={c.id}
+              style={[
+                styles.cuentaButton,
+                cuentaSeleccionada?.id === c.id && styles.tipoActive,
+              ]}
+              onPress={() => setCuentaSeleccionada(c)}
+            >
+              <Text
+                style={[
+                  styles.tipoText,
+                  cuentaSeleccionada?.id === c.id && styles.tipoTextActive,
+                ]}
+              >
+                {c.nombre}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Botones */}
       <View style={styles.buttonRow}>
         <TouchableOpacity
           style={styles.secondaryButton}
@@ -97,6 +183,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
+  label: {
+    color: "#94A3B8",
+    marginBottom: 8,
+    marginTop: 10,
+  },
+
   input: {
     backgroundColor: "#1E293B",
     padding: 15,
@@ -108,7 +200,7 @@ const styles = StyleSheet.create({
   tipoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 15,
   },
 
   tipoButton: {
@@ -129,16 +221,23 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  button: {
-    backgroundColor: "#38BDF8",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
+  tipoTextActive: {
+    color: "white",
+    fontWeight: "bold",
   },
 
-  buttonText: {
-    fontWeight: "bold",
-    color: "#0F172A",
+  cuentaContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  cuentaButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#1E293B",
+    borderRadius: 10,
   },
 
   buttonRow: {
@@ -156,6 +255,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  buttonText: {
+    fontWeight: "bold",
+    color: "#0F172A",
+  },
+
   secondaryButton: {
     flex: 1,
     backgroundColor: "#1E293B",
@@ -167,5 +271,35 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: "#94A3B8",
     fontWeight: "600",
+  },
+
+  error: {
+    color: "#F87171",
+    marginBottom: 10,
+  },
+
+  emptyContainer: {
+    backgroundColor: "#1E293B",
+    padding: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  emptyText: {
+    color: "#94A3B8",
+    marginBottom: 10,
+  },
+
+  createAccountBtn: {
+    backgroundColor: "#38BDF8",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+
+  createAccountText: {
+    color: "#0F172A",
+    fontWeight: "bold",
   },
 });
