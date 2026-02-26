@@ -1,4 +1,11 @@
-import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Button,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { registerUser } from "../services/authService";
@@ -35,6 +42,8 @@ export default function RegisterScreen({ navigation }) {
   const { login } = useAuth();
   const theme = useTheme();
 
+  let device_name = Platform.OS;
+
   const handleRegister = async () => {
     try {
       setSubmitting(true);
@@ -54,6 +63,8 @@ export default function RegisterScreen({ navigation }) {
         return;
       }
 
+      // 🔹 Detectamos el nombre del dispositivo dinámicamente
+
       const data = await registerUser({
         nombre,
         apellido,
@@ -62,11 +73,13 @@ export default function RegisterScreen({ navigation }) {
         moneda,
         password,
         confirmedPassword,
+        device_name,
       });
 
-      await login(data);
+      console.log(data);
+      await login(data.data);
     } catch (error) {
-      showAlert("Error", parseError(error));
+      showAlert("Error", parseError(error.message));
     } finally {
       setSubmitting(false);
     }

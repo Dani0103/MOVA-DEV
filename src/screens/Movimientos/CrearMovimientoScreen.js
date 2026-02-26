@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useState } from "react";
+import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
 
 export default function CrearMovimientoScreen({
   navigation,
@@ -87,32 +88,31 @@ export default function CrearMovimientoScreen({
       />
 
       {/* Tipo */}
-      <Text style={styles.label}>Tipo</Text>
-      <View style={styles.tipoContainer}>
-        <TouchableOpacity
-          style={[styles.tipoButton, tipo === "ingreso" && styles.tipoActive]}
-          onPress={() => setTipo("ingreso")}
-        >
-          <Text
+      <Text style={styles.label}>Tipo de movimiento</Text>
+      <View style={styles.selectorContainer}>
+        {TRANSACTION_TYPES.map((item) => (
+          <TouchableOpacity
+            key={item.id}
             style={[
-              styles.tipoText,
-              tipo === "ingreso" && styles.tipoTextActive,
+              styles.selectorButton, // Usamos el estilo base unificado
+              tipo === item.id && {
+                backgroundColor: item.color + "20",
+                borderColor: item.color,
+                borderWidth: 1,
+              },
             ]}
+            onPress={() => setTipo(item.id)}
           >
-            Ingreso
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tipoButton, tipo === "gasto" && styles.tipoActive]}
-          onPress={() => setTipo("gasto")}
-        >
-          <Text
-            style={[styles.tipoText, tipo === "gasto" && styles.tipoTextActive]}
-          >
-            Gasto
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.selectorText, // Usamos el estilo base unificado
+                tipo === item.id && { color: item.color, fontWeight: "bold" },
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Cuenta */}
@@ -129,7 +129,7 @@ export default function CrearMovimientoScreen({
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.cuentaContainer}>
+        <View style={styles.selectorContainer}>
           {cuentas.map((c) => (
             <TouchableOpacity
               key={c.id}
@@ -301,5 +301,28 @@ const styles = StyleSheet.create({
   createAccountText: {
     color: "#0F172A",
     fontWeight: "bold",
+  },
+
+  selectorContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 20,
+  },
+  selectorButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#1E293B",
+    borderRadius: 12,
+    minWidth: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "transparent", // Borde invisible por defecto para evitar saltos visuales
+  },
+  selectorText: {
+    color: "#94A3B8",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

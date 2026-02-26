@@ -9,8 +9,9 @@ export async function registerUser({
   moneda,
   password,
   confirmedPassword,
+  device_name,
 }) {
-  return await apiFetch("/register", {
+  return await apiFetch("/auth/register", {
     method: "POST",
     body: JSON.stringify({
       nombre,
@@ -20,13 +21,15 @@ export async function registerUser({
       moneda,
       password,
       password_confirmation: confirmedPassword,
+      device_name,
+      plan_id: 1,
     }),
   });
 }
 
 // LOGIN APP
 export async function loginUser(email, password) {
-  return await apiFetch("/login", {
+  return await apiFetch("/auth/login", {
     method: "POST",
     body: JSON.stringify({
       email,

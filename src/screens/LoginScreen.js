@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }) {
       }
 
       const data = await loginUser(email, password);
-      await login(data);
+      await login(data.data);
     } catch (error) {
       showAlert("Error", parseError(error));
     } finally {
