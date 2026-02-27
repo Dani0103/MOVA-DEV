@@ -1,28 +1,25 @@
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { registerUser } from "../services/authService";
 import { CURRENCIES } from "../constants/currencies";
 import { validateRegister } from "../validators/registerValidator";
-import { useTheme } from "../theme/useTheme";
+// Importamos universalAlert para consistencia
+import { universalAlert } from "../utils/universalAlert";
+import { parseError } from "../utils/parseError";
 
-// 🔹 Componentes reutilizables
 import FormInput from "../components/form/FormInput";
 import FormSelect from "../components/form/FormSelect";
 
-//Alertas
-import { showAlert } from "../utils/showAlert";
-import { parseError } from "../utils/parseError";
-
 export default function RegisterScreen({ navigation }) {
-  // Obligatorios
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +28,6 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [confirmedPassword, setConfirmedPassword] = useState("");
 
-  // Monedas dinámicas
   const [currencies, setCurrencies] = useState([]);
   const [loadingCurrencies, setLoadingCurrencies] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -40,14 +36,11 @@ export default function RegisterScreen({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { login } = useAuth();
-  const theme = useTheme();
-
   let device_name = Platform.OS;
 
   const handleRegister = async () => {
     try {
       setSubmitting(true);
-
       const validationError = validateRegister({
         nombre,
         apellido,
@@ -59,11 +52,9 @@ export default function RegisterScreen({ navigation }) {
       });
 
       if (validationError) {
-        showAlert("Error", validationError);
+        universalAlert("Error", validationError);
         return;
       }
-
-      // 🔹 Detectamos el nombre del dispositivo dinámicamente
 
       const data = await registerUser({
         nombre,
@@ -76,10 +67,9 @@ export default function RegisterScreen({ navigation }) {
         device_name,
       });
 
-      console.log(data);
       await login(data.data);
     } catch (error) {
-      showAlert("Error", parseError(error.message));
+      universalAlert("Error", parseError(error.message));
     } finally {
       setSubmitting(false);
     }
@@ -92,128 +82,192 @@ export default function RegisterScreen({ navigation }) {
           "https://v6.exchangerate-api.com/v6/b27e1c7bfcca2c10dca98e5c/latest/USD",
         );
         const data = await response.json();
-
-        if (data.result !== "success") {
+        if (data.result !== "success")
           throw new Error("Error cargando monedas");
-        }
 
         const formattedCurrencies = Object.keys(data.conversion_rates).map(
           (code) => ({
             code,
-            label: `${code} - ${
-              CURRENCIES[code]?.name || "Moneda por definir"
-            }`,
+            label: `${code} - ${CURRENCIES[code]?.name || "Moneda por definir"}`,
           }),
         );
-
         setCurrencies(formattedCurrencies);
       } catch (error) {
-        showAlert("Error", "No se pudieron cargar las monedas");
+        universalAlert("Error", "No se pudieron cargar las monedas");
       } finally {
         setLoadingCurrencies(false);
       }
     };
-
     fetchCurrencies();
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.title, { color: theme.text }]}>Crear cuenta</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.headerSection}>
+        <Text style={styles.title}>Crea tu cuenta</Text>
+        <Text style={styles.subtitle}>
+          Comienza a organizar tus finanzas hoy
+        </Text>
+      </View>
 
-      {/* Nombres*/}
-      <Text style={[styles.label, { color: theme.label }]}>Nombre/s *</Text>
-      <FormInput value={nombre} onChangeText={setNombre} />
+      <View style={styles.formSection}>
+        <Text style={styles.label}>Nombre/s *</Text>
+        <FormInput
+          value={nombre}
+          onChangeText={setNombre}
+          placeholder="Tu nombre"
+          placeholderTextColor="#64748B"
+        />
 
-      {/* Apellidos */}
-      <Text style={[styles.label, { color: theme.label }]}>Apellido/s *</Text>
-      <FormInput value={apellido} onChangeText={setApellido} />
+        <Text style={styles.label}>Apellido/s *</Text>
+        <FormInput
+          value={apellido}
+          onChangeText={setApellido}
+          placeholder="Tu apellido"
+          placeholderTextColor="#64748B"
+        />
 
-      {/* Email */}
-      <Text style={[styles.label, { color: theme.label }]}>
-        Correo electrónico *
-      </Text>
-      <FormInput
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+        <Text style={styles.label}>Correo electrónico *</Text>
+        <FormInput
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          placeholder="ejemplo@correo.com"
+          placeholderTextColor="#64748B"
+        />
 
-      {/* País */}
-      <Text style={[styles.label, { color: theme.label }]}>Nacionalidad *</Text>
-      <FormInput value={nacionalidad} onChangeText={setNacionalidad} />
+        <Text style={styles.label}>Nacionalidad *</Text>
+        <FormInput
+          value={nacionalidad}
+          onChangeText={setNacionalidad}
+          placeholder="Ej: Colombiano"
+          placeholderTextColor="#64748B"
+        />
 
-      {/* Moneda */}
-      <Text style={[styles.label, { color: theme.label }]}>
-        Moneda preferida *
-      </Text>
-      <FormSelect
-        value={moneda}
-        onValueChange={setMoneda}
-        items={currencies}
-        loading={loadingCurrencies}
-        placeholder="Selecciona una moneda"
-      />
+        <Text style={styles.label}>Moneda preferida *</Text>
+        <FormSelect
+          value={moneda}
+          onValueChange={setMoneda}
+          items={currencies}
+          loading={loadingCurrencies}
+          placeholder="Selecciona una moneda"
+        />
 
-      {/* Password */}
-      <Text style={[styles.label, { color: theme.label }]}>Contraseña *</Text>
-      <FormInput
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry={!showPassword}
-        rightIcon={showPassword ? "eye-off" : "eye"}
-        onRightIconPress={() => setShowPassword((prev) => !prev)}
-      />
+        <Text style={styles.label}>Contraseña *</Text>
+        <FormInput
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          placeholder="********"
+          placeholderTextColor="#64748B"
+          rightIcon={showPassword ? "eye-off" : "eye"}
+          onRightIconPress={() => setShowPassword((prev) => !prev)}
+        />
 
-      {/* confirmacion Password */}
-      <Text style={[styles.label, { color: theme.label }]}>
-        Confirmar contraseña *
-      </Text>
-      <FormInput
-        value={confirmedPassword}
-        onChangeText={setConfirmedPassword}
-        secureTextEntry={!showConfirmPassword}
-        rightIcon={showConfirmPassword ? "eye-off" : "eye"}
-        onRightIconPress={() => setShowConfirmPassword((prev) => !prev)}
-      />
+        <Text style={styles.label}>Confirmar contraseña *</Text>
+        <FormInput
+          value={confirmedPassword}
+          onChangeText={setConfirmedPassword}
+          secureTextEntry={!showConfirmPassword}
+          placeholder="********"
+          placeholderTextColor="#64748B"
+          rightIcon={showConfirmPassword ? "eye-off" : "eye"}
+          onRightIconPress={() => setShowConfirmPassword((prev) => !prev)}
+        />
 
-      <Button
-        title={submitting ? "Creando cuenta..." : "Registrarse"}
-        onPress={handleRegister}
-        disabled={submitting}
-      />
+        <TouchableOpacity
+          style={[styles.mainButton, submitting && { opacity: 0.7 }]}
+          onPress={handleRegister}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#0F172A" />
+          ) : (
+            <Text style={styles.buttonText}>Registrarse</Text>
+          )}
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate("Login")}
-        disabled={submitting}
-      >
-        <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Login")}
+          style={styles.linkContainer}
+        >
+          <Text style={styles.linkText}>
+            ¿Ya tienes cuenta?{" "}
+            <Text style={styles.linkHighlight}>Inicia sesión</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "statrt",
+    backgroundColor: "#0F172A",
+  },
+  scrollContent: {
     padding: 24,
-    overflow: "auto",
+    paddingTop: 60, // Espacio para el notch o aire superior
+    paddingBottom: 40,
+  },
+  headerSection: {
+    marginBottom: 30,
   },
   title: {
-    fontSize: 26,
-    textAlign: "center",
-    fontWeight: "600",
+    fontSize: 28,
+    color: "white",
+    fontWeight: "bold",
+  },
+  subtitle: {
+    fontSize: 15,
+    color: "#94A3B8",
+    marginTop: 6,
+  },
+  formSection: {
+    width: "100%",
   },
   label: {
-    marginBottom: 6,
-    marginTop: 8,
+    color: "#94A3B8",
+    marginBottom: 8,
+    marginTop: 12,
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase", // Toque elegante
+    letterSpacing: 0.5,
+  },
+  mainButton: {
+    backgroundColor: "#38BDF8",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 30,
+    shadowColor: "#38BDF8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  buttonText: {
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  linkContainer: {
+    marginTop: 25,
+    alignItems: "center",
+  },
+  linkText: {
+    color: "#94A3B8",
     fontSize: 14,
   },
-  link: {
-    marginTop: 16,
-    textAlign: "center",
-    color: "#60a5fa",
+  linkHighlight: {
+    color: "#38BDF8",
+    fontWeight: "bold",
   },
 });

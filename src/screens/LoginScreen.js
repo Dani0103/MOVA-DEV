@@ -1,75 +1,98 @@
-import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { loginUser } from "../services/authService";
 import { validateLogin } from "../validators/loginValidator";
-import { useTheme } from "../theme/useTheme";
-
-// Componentes reutilizables
-import FormInput from "../components/form/FormInput";
-
-// Alertas
-import { showAlert } from "../utils/showAlert";
+import { universalAlert } from "../utils/universalAlert";
 import { parseError } from "../utils/parseError";
+import FormInput from "../components/form/FormInput";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [submitting, setSubmitting] = useState(false);
 
+  // 🔹 Estado para controlar si la contraseña es visible o no
+  const [showPassword, setShowPassword] = useState(false);
+
   const { login } = useAuth();
-  const theme = useTheme();
 
   const handleLogin = async () => {
     try {
       setSubmitting(true);
-
       const validationError = validateLogin({ email, password });
       if (validationError) {
-        showAlert("Error", validationError);
+        universalAlert("Error", validationError);
         return;
       }
 
       const data = await loginUser(email, password);
       await login(data.data);
     } catch (error) {
-      showAlert("Error", parseError(error));
+      universalAlert("Error", parseError(error));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.title, { color: theme.text }]}>Iniciar sesión</Text>
+    <View style={styles.container}>
+      <View style={styles.headerSection}>
+        <Text style={styles.title}>Bienvenido</Text>
+        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+      </View>
 
-      {/* Email */}
-      <Text style={[styles.label, { color: theme.label }]}>
-        Correo electrónico
-      </Text>
-      <FormInput
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+      <View style={styles.formSection}>
+        <Text style={styles.label}>Correo electrónico</Text>
+        <FormInput
+          placeholder="ejemplo@correo.com"
+          placeholderTextColor="#64748B"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
-      {/* Password */}
-      <Text style={[styles.label, { color: theme.label }]}>Contraseña</Text>
-      <FormInput value={password} onChangeText={setPassword} secureTextEntry />
+        <Text style={styles.label}>Contraseña</Text>
+        {/* 🔹 Agregamos props para el icono y la visibilidad */}
+        <FormInput
+          placeholder="********"
+          placeholderTextColor="#64748B"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword} // Si showPassword es false, se oculta
+          rightIcon={showPassword ? "eye-off" : "eye"} // Cambia el icono dinámicamente
+          onRightIconPress={() => setShowPassword(!showPassword)} // Alterna el estado
+        />
 
-      <Button
-        title={submitting ? "Entrando..." : "Entrar"}
-        onPress={handleLogin}
-        disabled={submitting}
-      />
+        <TouchableOpacity
+          style={[styles.mainButton, submitting && { opacity: 0.7 }]}
+          onPress={handleLogin}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#0F172A" />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={[styles.link, { color: theme.link }]}>
-          ¿No tienes cuenta? Regístrate
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Register")}
+          style={styles.linkContainer}
+        >
+          <Text style={styles.linkText}>
+            ¿No tienes cuenta?{" "}
+            <Text style={styles.linkHighlight}>Regístrate</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -77,22 +100,59 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: "#0F172A", // Fondo oscuro de tu app
     padding: 24,
+    justifyContent: "center",
+  },
+  headerSection: {
+    marginBottom: 40,
   },
   title: {
-    fontSize: 26,
-    marginBottom: 24,
-    textAlign: "center",
-    fontWeight: "600",
+    fontSize: 32,
+    color: "white",
+    fontWeight: "bold",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#94A3B8",
+    marginTop: 8,
+  },
+  formSection: {
+    width: "100%",
   },
   label: {
-    marginBottom: 6,
-    marginTop: 8,
+    color: "#94A3B8",
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  mainButton: {
+    backgroundColor: "#38BDF8", // El azul brillante de tus cuentas
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 20,
+    shadowColor: "#38BDF8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  buttonText: {
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  linkContainer: {
+    marginTop: 25,
+    alignItems: "center",
+  },
+  linkText: {
+    color: "#94A3B8",
     fontSize: 14,
   },
-  link: {
-    marginTop: 16,
-    textAlign: "center",
+  linkHighlight: {
+    color: "#38BDF8",
+    fontWeight: "bold",
   },
 });
