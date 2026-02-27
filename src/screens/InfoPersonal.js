@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import FloatingMenuButton from "../components/layout/FloatingMenuButton";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function InfoPersonal() {
   const { user } = useAuth();
@@ -11,118 +12,190 @@ export default function InfoPersonal() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-
-        <Text style={styles.name}>
-          {user.nombre} {user.apellido}
-        </Text>
-
-        <Text style={styles.email}>{user.email}</Text>
-
-        <View style={styles.divider} />
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Nacionalidad</Text>
-          <Text style={styles.value}>{user.nacionalidad}</Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Moneda</Text>
-          <Text style={styles.value}>{user.moneda}</Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Estado</Text>
-          <Text style={styles.value}>
-            {user.activo ? "Activa" : "Inactiva"}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Sección de Encabezado / Avatar */}
+        <View style={styles.headerCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          <Text style={styles.name}>
+            {user.nombre} {user.apellido}
           </Text>
+          <Text style={styles.email}>{user.email}</Text>
+
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              {user.activo ? "Cuenta Activa" : "Inactiva"}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.row}>
-          <Text style={styles.label}>Último acceso</Text>
-          <Text style={styles.value}>{formatDate(user.ultimo_login)}</Text>
-        </View>
-      </View>
+        {/* Sección de Detalles */}
+        <Text style={styles.sectionTitle}>Detalles de la cuenta</Text>
 
-      <FloatingMenuButton />
+        <View style={styles.infoGrid}>
+          <View style={styles.infoCard}>
+            <Ionicons name="flag-outline" size={20} color="#38BDF8" />
+            <Text style={styles.label}>Nacionalidad</Text>
+            <Text style={styles.value}>
+              {user.nacionalidad || "No especificada"}
+            </Text>
+          </View>
+
+          <View style={styles.infoCard}>
+            <Ionicons name="cash-outline" size={20} color="#38BDF8" />
+            <Text style={styles.label}>Moneda Principal</Text>
+            <Text style={styles.value}>{user.moneda}</Text>
+          </View>
+        </View>
+
+        <View style={styles.footerCard}>
+          <View style={styles.row}>
+            <Ionicons name="time-outline" size={18} color="#94A3B8" />
+            <Text style={styles.footerLabel}>Último acceso:</Text>
+            <Text style={styles.footerValue}>
+              {formatDate(user.ultimo_login)}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* <FloatingMenuButton /> */}
     </View>
   );
 }
 
 function formatDate(dateString) {
   if (!dateString) return "-";
-
   const date = new Date(dateString);
-  return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+  return date.toLocaleDateString();
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#020617",
-    padding: 20,
+    paddingHorizontal: 20,
   },
 
-  card: {
+  headerCard: {
     backgroundColor: "#0F172A",
-    // borderRadius: 18,
-    padding: 20,
+    borderRadius: 24,
+    padding: 30,
+    marginTop: 20,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#1E293B",
   },
 
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: "#1E293B",
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center",
-    marginBottom: 12,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#38BDF8", // Acento de color
   },
 
   avatarText: {
     color: "white",
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "bold",
   },
 
   name: {
     color: "white",
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 22,
+    fontWeight: "bold",
     textAlign: "center",
   },
 
   email: {
     color: "#94A3B8",
-    fontSize: 13,
+    fontSize: 14,
     textAlign: "center",
     marginTop: 4,
-    marginBottom: 16,
   },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#1E293B",
-    marginVertical: 10,
+  badge: {
+    backgroundColor: "rgba(74, 222, 128, 0.1)", // Verde suave transparente
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 15,
   },
 
-  row: {
-    marginTop: 10,
+  badgeText: {
+    color: "#4ADE80",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+
+  sectionTitle: {
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginTop: 30,
+    marginBottom: 15,
+    marginLeft: 5,
+  },
+
+  infoGrid: {
+    flexDirection: "row",
+    gap: 15,
+  },
+
+  infoCard: {
+    flex: 1,
+    backgroundColor: "#0F172A",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#1E293B",
   },
 
   label: {
     color: "#94A3B8",
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 10,
+    textTransform: "uppercase",
   },
 
   value: {
     color: "white",
-    fontSize: 15,
-    fontWeight: "500",
-    marginTop: 2,
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 4,
+  },
+
+  footerCard: {
+    backgroundColor: "#0F172A",
+    borderRadius: 20,
+    padding: 15,
+    marginTop: 20,
+    marginBottom: 100, // Espacio para el floating button
+  },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  footerLabel: {
+    color: "#94A3B8",
+    fontSize: 13,
+  },
+
+  footerValue: {
+    color: "white",
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
