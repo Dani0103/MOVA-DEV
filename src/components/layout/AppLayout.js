@@ -8,12 +8,14 @@ import InfoPersonal from "../../screens/InfoPersonal";
 // import MovimientosScreen from "../../screens/Movimientos/MovimientosScreen";
 // import CategoriasScreen from "../../screens/CategoriasScreen";
 // import MetasScreen from "../../screens/MetasScreen";
-import DeudasScreen from "../../screens/DeudasScreen";
-import EstadisticasScreen from "../../screens/EstadisticasScreen";
+// import DeudasScreen from "../../screens/Deudas/DeudasScreen";
+// import EstadisticasScreen from "../../screens/EstadisticasScreen";
 import CuentasStack from "../../navigation/CuentasStack";
 import MovimientosStack from "../../navigation/MovimientosStack";
 import CategoriasStack from "../../navigation/CategoriasStack";
 import MetasStack from "../../navigation/MetasStack";
+import DeudasStack from "../../navigation/DeudasStack";
+import EstadisticasScreen from "../../screens/EstadisticasScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -40,7 +42,7 @@ export default function AppLayout() {
         <Drawer.Screen name="Movimientos" component={MovimientosStack} />
         <Drawer.Screen name="Categorías" component={CategoriasStack} />
         <Drawer.Screen name="Metas" component={MetasStack} />
-        <Drawer.Screen name="Deudas" component={DeudasScreen} />
+        <Drawer.Screen name="Deudas" component={DeudasStack} />
         <Drawer.Screen name="Estadísticas" component={EstadisticasScreen} />
         <Drawer.Screen
           name="Perfil"

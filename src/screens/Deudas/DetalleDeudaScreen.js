@@ -9,27 +9,24 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
-const { width } = Dimensions.get("window");
-
-export default function DetalleMetaScreen() {
+export default function DetalleDeudaScreen() {
   const navigation = useNavigation();
   const route = useRoute();
 
-  // Recibimos la meta por parámetros (si no viene, usamos un mock para desarrollo)
-  const { meta } = route.params || {
-    meta: {
+  // Recibimos la deuda por parámetros (o usamos un mock)
+  const { deuda } = route.params || {
+    deuda: {
       id: 1,
-      nombre: "Fondo de Emergencia",
-      objetivo: 5000000,
-      actual: 2850000,
-      color: "#38BDF8",
-      icono: "shield-checkmark",
-      fecha_limite: "2026-12-31",
+      acreedor: "Banco X (Tarjeta)",
+      monto_total: 2000000,
+      abonado: 500000,
+      color: "#F87171",
+      icono: "card",
     },
   };
 
-  const progreso = (meta.actual / meta.objetivo) * 100;
-  const faltante = meta.objetivo - meta.actual;
+  const saldoPendiente = deuda.monto_total - deuda.abonado;
+  const progreso = (deuda.abonado / deuda.monto_total) * 100;
 
   return (
     <View style={styles.container}>
@@ -41,9 +38,9 @@ export default function DetalleMetaScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Progreso de Meta</Text>
+        <Text style={styles.headerTitle}>Detalle de Deuda</Text>
         {/* <TouchableOpacity style={styles.editBtn}>
-          <Ionicons name="options-outline" size={20} color="#38BDF8" />
+          <Ionicons name="trash-outline" size={20} color="#F87171" />
         </TouchableOpacity> */}
       </View>
 
@@ -53,78 +50,74 @@ export default function DetalleMetaScreen() {
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: meta.color + "20" },
+              { backgroundColor: deuda.color + "20" },
             ]}
           >
-            <Ionicons name={meta.icono} size={50} color={meta.color} />
+            <Ionicons name={deuda.icono} size={50} color={deuda.color} />
           </View>
-          <Text style={styles.metaTitle}>{meta.nombre}</Text>
-          <Text style={styles.metaSubtitle}>
-            Objetivo: $ {meta.objetivo.toLocaleString()}
+          <Text style={styles.acreedorTitle}>{deuda.acreedor}</Text>
+          <Text style={styles.totalSubtitle}>
+            Deuda Inicial: $ {deuda.monto_total.toLocaleString()}
           </Text>
         </View>
 
-        {/* Visual de Progreso Circular o Barra Grande */}
-        <View style={styles.progressSection}>
+        {/* Resumen de Saldo */}
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Saldo Pendiente</Text>
+          <Text style={styles.balanceAmount}>
+            $ {saldoPendiente.toLocaleString()}
+          </Text>
+
           <View style={styles.progressBarBg}>
             <View
               style={[
                 styles.progressBarFill,
                 {
                   width: `${Math.min(progreso, 100)}%`,
-                  backgroundColor: meta.color,
+                  backgroundColor: deuda.color,
                 },
               ]}
             />
           </View>
-          <View style={styles.progressLabels}>
-            <Text style={styles.percentageText}>{progreso.toFixed(1)}%</Text>
-            <Text style={styles.remainingText}>
-              Faltan $ {faltante.toLocaleString()}
-            </Text>
-          </View>
+          <Text style={styles.progressText}>{progreso.toFixed(1)}% pagado</Text>
         </View>
 
-        {/* Resumen de Datos */}
+        {/* Estadísticas en Grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Ahorrado</Text>
-            <Text style={[styles.statValue, { color: meta.color }]}>
-              $ {meta.actual.toLocaleString()}
+            <Text style={styles.statLabel}>Abonado</Text>
+            <Text style={[styles.statValue, { color: "#4ADE80" }]}>
+              $ {deuda.abonado.toLocaleString()}
             </Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Fecha Meta</Text>
-            <Text style={styles.statValue}>
-              {meta.fecha_limite || "Sin fecha"}
-            </Text>
+            <Text style={styles.statLabel}>Tasa Interés</Text>
+            <Text style={styles.statValue}>N/A</Text>
           </View>
         </View>
 
         {/* Botones de Acción */}
         <View style={styles.actionSection}>
           <TouchableOpacity
-            style={[styles.primaryAction, { backgroundColor: meta.color }]}
-            onPress={() => navigation.navigate("AñadirAhorro", { meta })}
+            style={[styles.primaryAction, { backgroundColor: deuda.color }]}
+            onPress={() => navigation.navigate("AñadirPagoDeuda", { deuda })}
           >
-            <Ionicons name="add-circle" size={22} color="#0F172A" />
-            <Text style={styles.primaryActionText}>Añadir Ahorro</Text>
+            <Ionicons name="wallet-outline" size={22} color="white" />
+            <Text style={styles.primaryActionText}>Registrar Pago</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryAction}>
-            <Text style={styles.secondaryActionText}>Historial de aportes</Text>
+            <Text style={styles.secondaryActionText}>
+              Ver historial de pagos
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Tips automáticos */}
-        <View style={styles.tipCard}>
-          <Ionicons name="bulb-outline" size={20} color="#FACC15" />
-          <Text style={styles.tipText}>
-            Si ahorras{" "}
-            <Text style={{ fontWeight: "bold", color: "white" }}>
-              $ 250,000
-            </Text>{" "}
-            cada mes, alcanzarás tu meta en 9 meses.
+        {/* Alerta de Pago */}
+        <View style={styles.warningCard}>
+          <Ionicons name="alert-circle-outline" size={20} color="#FB923C" />
+          <Text style={styles.warningText}>
+            Recuerda realizar tus pagos a tiempo para evitar intereses por mora.
           </Text>
         </View>
       </ScrollView>
@@ -172,47 +165,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
   },
-  metaTitle: {
+  acreedorTitle: {
     color: "white",
     fontSize: 24,
     fontWeight: "bold",
   },
-  metaSubtitle: {
+  totalSubtitle: {
     color: "#94A3B8",
     fontSize: 14,
     marginTop: 5,
   },
-  progressSection: {
+  balanceCard: {
     backgroundColor: "#1E293B",
-    padding: 20,
+    padding: 25,
     borderRadius: 24,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  balanceLabel: {
+    color: "#94A3B8",
+    fontSize: 14,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  balanceAmount: {
+    color: "#F87171",
+    fontSize: 32,
+    fontWeight: "bold",
     marginBottom: 20,
   },
   progressBarBg: {
-    height: 12,
+    height: 10,
     backgroundColor: "#334155",
-    borderRadius: 6,
+    borderRadius: 5,
     width: "100%",
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: 6,
+    borderRadius: 5,
   },
-  progressLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-  },
-  percentageText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  remainingText: {
+  progressText: {
     color: "#94A3B8",
-    fontSize: 13,
+    fontSize: 12,
+    marginTop: 10,
+    fontWeight: "600",
   },
   statsGrid: {
     flexDirection: "row",
@@ -227,7 +225,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: "#64748B",
-    fontSize: 12,
+    fontSize: 11,
     textTransform: "uppercase",
     marginBottom: 5,
   },
@@ -246,10 +244,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 18,
     borderRadius: 16,
-    gap: 8,
+    gap: 10,
   },
   primaryActionText: {
-    color: "#0F172A",
+    color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -261,18 +259,18 @@ const styles = StyleSheet.create({
     color: "#38BDF8",
     fontWeight: "600",
   },
-  tipCard: {
+  warningCard: {
     flexDirection: "row",
-    backgroundColor: "rgba(250, 204, 21, 0.1)",
+    backgroundColor: "rgba(251, 146, 60, 0.1)",
     padding: 15,
     borderRadius: 16,
     alignItems: "center",
     gap: 12,
     marginBottom: 40,
     borderWidth: 1,
-    borderColor: "rgba(250, 204, 21, 0.2)",
+    borderColor: "rgba(251, 146, 60, 0.2)",
   },
-  tipText: {
+  warningText: {
     color: "#94A3B8",
     fontSize: 13,
     flex: 1,
