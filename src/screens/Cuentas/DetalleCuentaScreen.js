@@ -64,11 +64,11 @@ export default function DetalleCuentaScreen() {
                 {cuenta.tipo_cuenta?.nombre || "General"}
               </Text>
             </View>
-            <Ionicons
+            {/* <Ionicons
               name={cuenta.tipo_cuenta?.icono || "wallet-outline"}
               size={30}
               color={cuenta.color_hex || "#38BDF8"}
-            />
+            /> */}
           </View>
 
           <Text style={styles.balanceLabel}>Saldo Disponible</Text>

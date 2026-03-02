@@ -141,7 +141,7 @@ export default function CuentasScreen() {
 const styles = StyleSheet.create({
   containerPadre: {
     flex: 1,
-    padding: 15,
+    paddingHorizontal: 15,
   },
 
   container: {
