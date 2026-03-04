@@ -11,6 +11,9 @@ import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { universalAlert } from "../../utils/universalAlert";
+import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
+import { useAuth } from "../../context/AuthContext";
+import { createCategory } from "../../services/CategoriaService";
 
 // Colores consistentes con CrearCuenta
 const COLORES_DISPONIBLES = [
@@ -45,30 +48,51 @@ const ICONOS_DISPONIBLES = [
 
 export default function CrearCategoriaScreen() {
   const navigation = useNavigation();
+  const { token } = useAuth();
+
   const [nombre, setNombre] = useState("");
-  const [tipo, setTipo] = useState("gasto"); // gasto o ingreso
+  const [tipo, setTipo] = useState("");
   const [colorSelected, setColorSelected] = useState(COLORES_DISPONIBLES[0]);
   const [iconSelected, setIconSelected] = useState(ICONOS_DISPONIBLES[0]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleGuardar = async () => {
-    if (!nombre) {
+    // 1. Validación de campos locales
+    if (!nombre.trim()) {
       universalAlert("Error", "El nombre de la categoría es obligatorio");
       return;
     }
 
     try {
       setSubmitting(true);
-      // Aquí irá tu llamada al servicio de Laravel
-      // const response = await createCategory({ nombre, tipo, icono: iconSelected, color: colorSelected }, token);
 
-      console.log("Guardando:", { nombre, tipo, iconSelected, colorSelected });
+      const formData = {
+        nombre: nombre.trim(),
+        tipo: tipo,
+        padre: null,
+        icono: iconSelected,
+        color_hex: colorSelected,
+      };
 
-      universalAlert("¡Éxito!", "Categoría creada correctamente.", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      const response = await createCategory(formData, token);
+      if (response) {
+        universalAlert("¡Éxito!", "Categoría creada correctamente.", [
+          {
+            text: "OK",
+            onPress: () => {
+              // Opcional: Podrías pasar un parámetro para refrescar la lista al volver
+              navigation.goBack();
+            },
+          },
+        ]);
+      }
     } catch (error) {
-      universalAlert("Error", "No se pudo crear la categoría");
+      console.error("Error en createCategory:", error);
+
+      // 4. Manejo de errores específicos (opcional)
+      const mensajeError =
+        error.response?.data?.message || "No se pudo crear la categoría";
+      universalAlert("Error", mensajeError);
     } finally {
       setSubmitting(false);
     }
@@ -99,29 +123,25 @@ export default function CrearCategoriaScreen() {
 
       <Text style={styles.label}>Tipo</Text>
       <View style={styles.selectorContainer}>
-        {["gasto", "ingreso"].map((t) => (
+        {TRANSACTION_TYPES.map((item) => (
           <TouchableOpacity
-            key={t}
+            key={item.id}
             style={[
               styles.selectorButton,
-              tipo === t && {
-                backgroundColor: (t === "gasto" ? "#F87171" : "#4ADE80") + "20",
-                borderColor: t === "gasto" ? "#F87171" : "#4ADE80",
-                borderWidth: 1,
+              tipo === item.id && {
+                borderColor: item.color,
+                backgroundColor: item.color + "15",
               },
             ]}
-            onPress={() => setTipo(t)}
+            onPress={() => setTipo(item.id)}
           >
             <Text
               style={[
                 styles.selectorText,
-                tipo === t && {
-                  color: t === "gasto" ? "#F87171" : "#4ADE80",
-                  fontWeight: "bold",
-                },
+                tipo === item.id && { color: item.color },
               ]}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {item.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -236,7 +256,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   selectorText: { color: "#94A3B8", fontWeight: "600" },
-  gridContainer: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 10,
+  },
   gridItem: {
     width: 50,
     height: 50,
@@ -270,4 +295,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryText: { color: "#94A3B8", fontWeight: "600", fontSize: 16 },
+  selectorButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 12,
+    backgroundColor: "#1E293B",
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
 });

@@ -7,13 +7,15 @@ import CrearMovimientoScreen from "../screens/Movimientos/CrearMovimientoScreen"
 import { useAuth } from "../context/AuthContext";
 import { useAccounts } from "../context/AccountContext";
 import { loadMovimientos } from "../services/MovimientosService";
+import { useCategories } from "../context/CategoryContext";
 
 const Stack = createNativeStackNavigator();
 
 export default function MovimientosStack() {
   const navigation = useNavigation(); // 🔹 Hook necesario para el listener 'focus'
-  const { token } = useAuth();
-  const { cuentas, refreshAccounts } = useAccounts();
+  const { user, token } = useAuth();
+  const { cuentas, refreshAccounts, setCuentas } = useAccounts();
+  const { categorias, refreshCategories } = useCategories();
 
   const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,7 @@ export default function MovimientosStack() {
     try {
       setLoading(true);
       const response = await loadMovimientos(token);
+      console.log("🚀 ~ MovimientosStack ~ response:", response);
       // Laravel suele devolver { data: [...] }, asegúrate de acceder a .data
       setMovimientos(response.data || response);
     } catch (error) {
@@ -35,20 +38,29 @@ export default function MovimientosStack() {
   useEffect(() => {
     // 1. Carga inicial
     refreshAccounts(token);
+    refreshCategories(token, user.id);
     fetchMovimientosData();
 
     // 2. 🔹 Recargar cuando el usuario entra al stack (al volver de crear movimiento)
     const unsubscribe = navigation.addListener("focus", () => {
       refreshAccounts(token);
+      refreshCategories(token, user.id);
       fetchMovimientosData();
     });
 
     return unsubscribe;
-  }, [navigation, token, refreshAccounts, fetchMovimientosData]);
+  }, [
+    navigation,
+    token,
+    user.id,
+    refreshAccounts,
+    refreshCategories,
+    fetchMovimientosData,
+  ]);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MovimientosHome">
+      <Stack.Screen name="Movimientos">
         {(props) => (
           <MovimientosScreen
             {...props}
@@ -66,6 +78,8 @@ export default function MovimientosStack() {
             movimientos={movimientos}
             setMovimientos={setMovimientos}
             cuentas={cuentas} // Cuentas vienen del contexto global
+            setCuentas={setCuentas} // 🔹 Importante para el update del saldo
+            categorias={categorias}
             onSuccess={fetchMovimientosData} // Callback para refrescar tras guardar
           />
         )}

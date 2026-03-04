@@ -6,20 +6,24 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
-  Platform,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { createAccount } from "../../services/CuentaService";
+import { createAccount, updateAccount } from "../../services/CuentaService";
 import { TypeAccount, TypeCurrency } from "../../services/CatalogoService";
 import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
+import FormSelect from "../../components/form/FormSelect";
 
 export default function CrearCuentaScreen() {
   const navigation = useNavigation();
+  const route = useRoute(); // <-- Añadido para recibir parámetros
   const { user, token } = useAuth();
+
+  // Verificamos si recibimos una cuenta para editar
+  const cuentaAEditar = route.params?.cuenta;
+  const esEdicion = !!cuentaAEditar;
 
   const COLORES_DISPONIBLES = [
     "#38BDF8",
@@ -32,34 +36,42 @@ export default function CrearCuentaScreen() {
     "#64748B",
   ];
 
-  const [nombre, setNombre] = useState("");
-  const [saldo, setSaldo] = useState("");
-  const [tipoId, setTipoId] = useState(null); // Guardamos el ID, no el nombre
-  const [monedaId, setMonedaId] = useState(null);
+  // Inicializamos los estados con los datos de la cuenta si estamos editando
+  const [nombre, setNombre] = useState(cuentaAEditar?.nombre || "");
+  const [saldo, setSaldo] = useState(
+    cuentaAEditar?.saldo_actual?.toString() || "",
+  );
+  const [tipoId, setTipoId] = useState(cuentaAEditar?.tipo_cuenta?.id || null);
+  const [monedaId, setMonedaId] = useState(cuentaAEditar?.moneda?.id || null);
+  const [colorHex, setColorHex] = useState(
+    cuentaAEditar?.color_hex || "#38BDF8",
+  );
+
   const [tiposCuenta, setTiposCuenta] = useState([]);
   const [tiposMoneda, setTiposMoneda] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [colorHex, setColorHex] = useState("#38BDF8");
 
   // 1. Cargar tipos de cuenta desde el backend
   useEffect(() => {
     const loadData = async () => {
       try {
-        //peticiones
         const dataCuentas = await TypeAccount(token);
         const dataMonedas = await TypeCurrency(token);
 
         setTiposCuenta(dataCuentas.data);
         setTiposMoneda(dataMonedas.data);
 
-        if (user?.moneda_id) {
-          setMonedaId(user.moneda_id);
-        } else if (dataMonedas.length > 0) {
-          setMonedaId(dataMonedas[0].id);
+        // Solo establecemos valores por defecto si NO estamos editando
+        if (!esEdicion) {
+          if (user?.moneda_id) {
+            setMonedaId(user.moneda_id);
+          } else if (dataMonedas.data?.length > 0) {
+            setMonedaId(dataMonedas.data[0].id);
+          }
         }
-        // if (data.length > 0) setTipoId(data[0].id); // Seleccionar el primero por defecto
       } catch (err) {
         universalAlert(
           "Error",
@@ -73,7 +85,7 @@ export default function CrearCuentaScreen() {
   }, []);
 
   const handleGuardar = async () => {
-    if (!nombre || !saldo || !tipoId) {
+    if (!nombre || !saldo || !tipoId || !monedaId) {
       setError("Todos los campos son obligatorios");
       return;
     }
@@ -82,18 +94,30 @@ export default function CrearCuentaScreen() {
       setSubmitting(true);
 
       const dataToSend = {
+        tipo_cuenta_id: tipoId,
+        moneda_id: monedaId,
         nombre: nombre,
-        tipo_cuenta_id: tipoId, // El ID que sacamos del catálogo
-        moneda_id: monedaId, // Tomado del contexto de usuario
-        saldo: parseFloat(saldo), // Convertimos a número
+        saldo_actual: parseFloat(saldo),
         color_hex: colorHex,
       };
 
-      await createAccount(dataToSend, token);
-
-      universalAlert("¡Excelente!", "Tu cuenta ha sido creada correctamente.", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      if (esEdicion) {
+        // Llamada a la API para actualizar
+        await updateAccount(cuentaAEditar.nombre, dataToSend, token);
+        universalAlert(
+          "¡Actualizado!",
+          "Los cambios se guardaron correctamente.",
+          [{ text: "OK", onPress: () => navigation.goBack() }],
+        );
+      } else {
+        // Llamada a la API para crear
+        await createAccount(dataToSend, token);
+        universalAlert(
+          "¡Excelente!",
+          "Tu cuenta ha sido creada correctamente.",
+          [{ text: "OK", onPress: () => navigation.goBack() }],
+        );
+      }
     } catch (err) {
       universalAlert(
         "Error al guardar",
@@ -126,7 +150,10 @@ export default function CrearCuentaScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.topBar}>
-        <Text style={styles.title}>Nueva Cuenta</Text>
+        {/* Título dinámico */}
+        <Text style={styles.title}>
+          {esEdicion ? "Editar Cuenta" : "Nueva Cuenta"}
+        </Text>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -138,43 +165,21 @@ export default function CrearCuentaScreen() {
         style={styles.input}
         value={nombre}
         onChangeText={setNombre}
+        disabled={esEdicion}
       />
 
-      {/* Selector de Moneda con Load Effect */}
       <Text style={styles.label}>Moneda *</Text>
-      <View style={styles.tipoContainer}>
-        {loading
-          ? // Efecto visual de carga
-            [1, 2, 3].map((i) => (
-              <View
-                key={i}
-                style={[styles.tipoButton, styles.loaderPlaceholder]}
-              >
-                <ActivityIndicator size="small" color="#38BDF8" />
-              </View>
-            ))
-          : tiposMoneda.map((m) => (
-              <TouchableOpacity
-                key={m.id}
-                style={[
-                  styles.tipoButton,
-                  monedaId === m.id && styles.tipoActive,
-                ]}
-                onPress={() => setMonedaId(m.id)}
-              >
-                <Text
-                  style={[
-                    styles.tipoText,
-                    monedaId === m.id && styles.tipoTextActive,
-                  ]}
-                >
-                  {m.codigo}
-                </Text>
-              </TouchableOpacity>
-            ))}
-      </View>
+      <FormSelect
+        placeholder="Selecciona una moneda"
+        loading={loading}
+        value={monedaId}
+        onValueChange={(value) => setMonedaId(value)}
+        items={tiposMoneda.map((m) => ({
+          code: m.id,
+          label: `${m.codigo} - ${m.nombre || "Moneda"}`,
+        }))}
+      />
 
-      {/* Selector de Tipo de Cuenta con Load Effect */}
       <Text style={styles.label}>Tipo de cuenta *</Text>
       <View style={styles.tipoContainer}>
         {loading
@@ -211,7 +216,10 @@ export default function CrearCuentaScreen() {
             ))}
       </View>
 
-      <Text style={styles.label}>Saldo Inicial *</Text>
+      {/* Label dinámico para el saldo */}
+      <Text style={styles.label}>
+        {esEdicion ? "Saldo Actual *" : "Saldo Inicial *"}
+      </Text>
       <TextInput
         placeholder="0.00"
         placeholderTextColor="#64748B"
@@ -226,7 +234,6 @@ export default function CrearCuentaScreen() {
         }}
       />
 
-      {/* Selector de Color */}
       <Text style={styles.label}>Color Identificador *</Text>
       <View style={styles.colorContainer}>
         {COLORES_DISPONIBLES.map((item) => (
@@ -246,6 +253,7 @@ export default function CrearCuentaScreen() {
         ))}
       </View>
 
+      {/* Botón Guardar con texto dinámico */}
       <TouchableOpacity
         style={[styles.button, (submitting || loading) && { opacity: 0.7 }]}
         onPress={handleGuardar}
@@ -254,7 +262,9 @@ export default function CrearCuentaScreen() {
         {submitting ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text style={styles.buttonText}>Guardar Cuenta</Text>
+          <Text style={styles.buttonText}>
+            {esEdicion ? "Guardar Cambios" : "Crear Cuenta"}
+          </Text>
         )}
       </TouchableOpacity>
 
@@ -262,6 +272,9 @@ export default function CrearCuentaScreen() {
         <Ionicons name="arrow-back" size={18} color="#94A3B8" />
         <Text style={styles.secondaryText}>Cancelar y Volver</Text>
       </TouchableOpacity>
+
+      {/* Margen inferior para que no quede pegado abajo al scrollear */}
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -272,14 +285,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#0F172A",
     padding: 20,
   },
-
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
   },
-
   backBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -289,18 +300,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#1E293B",
   },
-
   backText: {
     color: "white",
     fontWeight: "600",
   },
-
   title: {
     color: "white",
     fontSize: 20,
     fontWeight: "bold",
   },
-
   label: {
     color: "#94A3B8",
     marginBottom: 6,
@@ -308,7 +316,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
   },
-
   loaderPlaceholder: {
     opacity: 0.5,
     justifyContent: "center",
@@ -318,42 +325,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#38BDF8",
   },
-
   input: {
     backgroundColor: "#1E293B",
     padding: 15,
-    borderRadius: 12, // Te sugiero redondearlos para que se vea más moderno
+    borderRadius: 12,
     color: "white",
     marginBottom: 10,
   },
-
   tipoContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     marginBottom: 10,
   },
-
   tipoButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: "#1E293B",
-    borderRadius: 10, // Coherencia visual
+    borderRadius: 10,
   },
-
   tipoActive: {
     backgroundColor: "#38BDF8",
   },
-
   tipoText: {
     color: "#94A3B8",
   },
-
   tipoTextActive: {
     color: "white",
     fontWeight: "bold",
   },
-
   button: {
     backgroundColor: "#38BDF8",
     padding: 15,
@@ -361,16 +361,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
-
   buttonText: {
     fontWeight: "bold",
   },
-
   error: {
     color: "#F87171",
     marginBottom: 10,
   },
-
   secondaryButton: {
     flexDirection: "row",
     justifyContent: "center",
@@ -379,12 +376,10 @@ const styles = StyleSheet.create({
     marginTop: 15,
     paddingVertical: 12,
   },
-
   secondaryText: {
     color: "#94A3B8",
     fontWeight: "500",
   },
-
   colorContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -403,6 +398,6 @@ const styles = StyleSheet.create({
   },
   colorSelected: {
     borderColor: "white",
-    transform: [{ scale: 1.1 }], // Hace que el seleccionado resalte un poco
+    transform: [{ scale: 1.1 }],
   },
 });

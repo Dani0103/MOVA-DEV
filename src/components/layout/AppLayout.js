@@ -39,8 +39,8 @@ export default function AppLayout() {
           options={{ title: "Inicio" }}
         />
         <Drawer.Screen name="Cuentas" component={CuentasStack} />
+        <Drawer.Screen name="Categorias" component={CategoriasStack} />
         <Drawer.Screen name="Movimientos" component={MovimientosStack} />
-        <Drawer.Screen name="Categorías" component={CategoriasStack} />
         <Drawer.Screen name="Metas" component={MetasStack} />
         <Drawer.Screen name="Deudas" component={DeudasStack} />
         <Drawer.Screen name="Estadísticas" component={EstadisticasScreen} />

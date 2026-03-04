@@ -69,13 +69,13 @@ export default function DetalleCategoriaScreen() {
           <View
             style={[
               styles.iconCircle,
-              { backgroundColor: categoria.color + "20" },
+              { backgroundColor: categoria.color_hex + "20" },
             ]}
           >
             <Ionicons
               name={categoria.icono}
               size={40}
-              color={categoria.color}
+              color={categoria.color_hex}
             />
           </View>
           <Text style={styles.catName}>{categoria.nombre}</Text>

@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -22,6 +23,7 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
+  let device_name = Platform.OS;
 
   const handleLogin = async () => {
     try {
@@ -32,10 +34,28 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      const data = await loginUser(email, password);
+      const data = await loginUser(email, password, device_name);
       await login(data.data);
     } catch (error) {
-      universalAlert("Error", parseError(error));
+      console.log("🚀 ~ handleLogin ~ error:", error);
+
+      // Variable por defecto
+      let mensajeMostrar = "Ocurrió un error al iniciar sesión.";
+
+      // Verificamos si vienen errores de validación (422) desde Laravel
+      if (error.errors) {
+        if (error.errors.email) {
+          mensajeMostrar = error.errors.email[0]; // "El usuario no existe..."
+        } else if (error.errors.password) {
+          mensajeMostrar = error.errors.password[0];
+        }
+      } else if (error.message) {
+        // Si no hay array de errores, mostramos el mensaje general ("Los datos enviados no son validos.")
+        mensajeMostrar = error.message;
+      }
+
+      // Mostramos la alerta con el texto limpio
+      universalAlert("Error", mensajeMostrar);
     } finally {
       setSubmitting(false);
     }

@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -5,324 +6,381 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
-import { useState } from "react";
 import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
+import { createMovimiento } from "../../services/MovimientosService";
+import { useAuth } from "../../context/AuthContext";
+import { universalAlert } from "../../utils/universalAlert";
 
+// Supongamos que recibes 'categorias' y 'setCateogrias' como props igual que las cuentas
 export default function CrearMovimientoScreen({
   navigation,
   movimientos,
   setMovimientos,
   cuentas,
   setCuentas,
+  categorias = [], // Añadido para validación
 }) {
+  const { token } = useAuth();
+
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
   const [tipo, setTipo] = useState("gasto");
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const handleGuardar = () => {
-    if (!descripcion || !monto || !cuentaSeleccionada) {
-      setError("Completa todos los campos");
-      return;
-    }
+  const handleGuardar = async () => {
+    if (!descripcion.trim()) return setError("La descripción es obligatoria");
+    if (!monto || parseFloat(monto) <= 0)
+      return setError("Ingresa un monto válido");
+    if (!categoriaSeleccionada) return setError("Selecciona una categoría");
+    if (!cuentaSeleccionada) return setError("Selecciona una cuenta");
 
-    const montoNumerico = parseFloat(monto);
+    setError("");
+    const montoNum = parseFloat(monto);
 
-    const nuevoMovimiento = {
-      id: Date.now(),
-      descripcion,
-      monto: montoNumerico,
-      tipo,
-      cuentaId: cuentaSeleccionada.id,
+    const dataToSend = {
+      // Si es gasto, sale de origen. Si es ingreso, entra a destino.
+      cuenta_origen_id: tipo === "gasto" ? cuentaSeleccionada.id : null,
+      cuenta_destino_id: tipo === "ingreso" ? cuentaSeleccionada.id : null,
+      categoria_id: categoriaSeleccionada.id,
+      monto: montoNum,
+      tipo: tipo, // "gasto" o "ingreso"
+      estado: "completada",
+      tasa_cambio: 1,
+      monto_convertido: montoNum,
+      fecha: new Date().toISOString().split("T")[0], // "2026-03-04"
+      descripcion: descripcion.trim(),
+      notas_internas: "",
+      etiqueta_ids: [], // Si no manejas etiquetas, envíalo vacío
     };
 
-    setMovimientos([...movimientos, nuevoMovimiento]);
+    try {
+      setSubmitting(true);
 
-    // 🔥 Actualizar saldo de la cuenta
-    const cuentasActualizadas = cuentas.map((c) => {
-      if (c.id === cuentaSeleccionada.id) {
-        const nuevoSaldo =
-          tipo === "ingreso"
-            ? c.saldo + montoNumerico
-            : c.saldo - montoNumerico;
+      const response = await createMovimiento(dataToSend, token);
+      const mensajeExito = response?.message || "Movimiento guardado con éxito";
 
-        return { ...c, saldo: nuevoSaldo };
-      }
-      return c;
-    });
-
-    setCuentas(cuentasActualizadas);
-
-    navigation.goBack();
+      universalAlert("¡Completado!", mensajeExito, [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.goBack();
+          },
+        },
+      ]);
+    } catch (err) {
+      const mensajeError =
+        err.response?.data?.message || err.message || "No se pudo guardar";
+      universalAlert("Error", mensajeError);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Nuevo Movimiento</Text>
+    <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Nuevo Movimiento</Text>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <View style={styles.errorBadge}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
 
-      <TextInput
-        placeholder="Descripción"
-        placeholderTextColor="#94A3B8"
-        style={styles.input}
-        value={descripcion}
-        onChangeText={(v) => {
-          setDescripcion(v);
-          setError("");
-        }}
-      />
-
-      <TextInput
-        placeholder="Monto"
-        placeholderTextColor="#94A3B8"
-        keyboardType="numeric"
-        style={styles.input}
-        value={monto}
-        onChangeText={(v) => {
-          setMonto(v);
-          setError("");
-        }}
-      />
-
-      {/* Tipo */}
-      <Text style={styles.label}>Tipo de movimiento</Text>
-      <View style={styles.selectorContainer}>
-        {TRANSACTION_TYPES.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={[
-              styles.selectorButton, // Usamos el estilo base unificado
-              tipo === item.id && {
-                backgroundColor: item.color + "20",
-                borderColor: item.color,
-                borderWidth: 1,
-              },
-            ]}
-            onPress={() => setTipo(item.id)}
-          >
-            <Text
-              style={[
-                styles.selectorText, // Usamos el estilo base unificado
-                tipo === item.id && { color: item.color, fontWeight: "bold" },
-              ]}
-            >
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Cuenta */}
-      <Text style={styles.label}>Cuenta</Text>
-      {!cuentas || cuentas.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Primero debes crear una cuenta</Text>
-
-          <TouchableOpacity
-            style={styles.createAccountBtn}
-            onPress={() => navigation.navigate("Cuentas")}
-          >
-            <Text style={styles.createAccountText}>Crear Cuenta</Text>
-          </TouchableOpacity>
+        {/* MONTO */}
+        <View style={styles.montoContainer}>
+          <Text style={styles.currencySymbol}>$</Text>
+          <TextInput
+            placeholder="0"
+            placeholderTextColor="#475569"
+            keyboardType="numeric"
+            style={styles.montoInput}
+            value={monto}
+            onChangeText={(v) => {
+              setMonto(v);
+              setError("");
+            }}
+          />
         </View>
-      ) : (
+
+        <Text style={styles.label}>Descripción</Text>
+        <TextInput
+          placeholder="Ej. Cena con amigos"
+          placeholderTextColor="#94A3B8"
+          style={styles.input}
+          value={descripcion}
+          onChangeText={(v) => {
+            setDescripcion(v);
+            setError("");
+          }}
+        />
+
+        <Text style={styles.label}>Tipo</Text>
         <View style={styles.selectorContainer}>
-          {cuentas.map((c) => (
+          {TRANSACTION_TYPES.map((item) => (
             <TouchableOpacity
-              key={c.id}
+              key={item.id}
               style={[
-                styles.cuentaButton,
-                cuentaSeleccionada?.id === c.id && styles.tipoActive,
+                styles.selectorButton,
+                tipo === item.id && {
+                  borderColor: item.color,
+                  backgroundColor: item.color + "15",
+                },
               ]}
-              onPress={() => setCuentaSeleccionada(c)}
+              onPress={() => setTipo(item.id)}
             >
               <Text
                 style={[
-                  styles.tipoText,
-                  cuentaSeleccionada?.id === c.id && styles.tipoTextActive,
+                  styles.selectorText,
+                  tipo === item.id && { color: item.color },
                 ]}
               >
-                {c.nombre}
+                {item.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-      )}
 
-      {/* Botones */}
-      <View style={styles.buttonRow}>
+        {/* VALIDACIÓN CATEGORÍAS */}
+        <Text style={styles.label}>Categoría</Text>
+        {!categorias || categorias.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No tienes categorías creadas</Text>
+            <TouchableOpacity
+              style={styles.createBtn}
+              onPress={() => navigation.navigate("Categorias")}
+            >
+              <Text style={styles.createBtnText}>Configurar Categorías</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.selectorContainer}>
+            {/* Filtramos por tipo para mostrar solo las relevantes */}
+            {categorias
+              .filter((c) => c.tipo === tipo)
+              .map((cat) => {
+                const isSelected = categoriaSeleccionada?.id === cat.id;
+
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.chip,
+                      isSelected && {
+                        backgroundColor: cat.color_hex + "20", // Fondo suave (20% opacidad)
+                        borderColor: cat.color_hex, // Borde del color de la categoría
+                        borderWidth: 1,
+                      },
+                    ]}
+                    onPress={() => {
+                      setCategoriaSeleccionada(cat);
+                      setError("");
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        isSelected && {
+                          color: cat.color_hex,
+                          fontWeight: "bold",
+                        },
+                      ]}
+                    >
+                      {cat.nombre}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+          </View>
+        )}
+
+        {/* VALIDACIÓN CUENTAS */}
+        <Text style={styles.label}>Cuenta</Text>
+        {!cuentas || cuentas.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>
+              Necesitas una cuenta para operar
+            </Text>
+            <TouchableOpacity
+              style={styles.createBtn}
+              onPress={() => navigation.navigate("Cuentas")}
+            >
+              <Text style={styles.createBtnText}>Crear mi primera cuenta</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.selectorContainer}>
+            {cuentas.map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                style={[
+                  styles.chip,
+                  cuentaSeleccionada?.id === c.id && styles.chipActive,
+                ]}
+                onPress={() => {
+                  setCuentaSeleccionada(c);
+                  setError("");
+                }}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    cuentaSeleccionada?.id === c.id && styles.chipTextActive,
+                  ]}
+                >
+                  {c.nombre}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+
+      {/* FOOTER */}
+      <View style={styles.footer}>
         <TouchableOpacity
           style={styles.secondaryButton}
           onPress={() => navigation.goBack()}
+          disabled={submitting}
         >
           <Text style={styles.secondaryText}>Cancelar</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleGuardar}>
-          <Text style={styles.buttonText}>Guardar</Text>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            (submitting || !cuentas?.length || !categorias?.length) && {
+              opacity: 0.5,
+            },
+          ]}
+          onPress={handleGuardar}
+          disabled={submitting || !cuentas?.length || !categorias?.length}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#0F172A" />
+          ) : (
+            <Text style={styles.buttonText}>Confirmar</Text>
+          )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0F172A",
-    padding: 20,
-  },
-
-  title: {
-    color: "white",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-
+  // ... (tus estilos anteriores se mantienen)
+  container: { flex: 1, padding: 20 },
+  title: { color: "white", fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   label: {
     color: "#94A3B8",
-    marginBottom: 8,
-    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 10,
+    marginTop: 15,
   },
-
   input: {
     backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 12,
     color: "white",
-    marginBottom: 15,
+    fontSize: 16,
   },
 
-  tipoContainer: {
+  montoContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 15,
-  },
-
-  tipoButton: {
-    flex: 1,
-    paddingVertical: 12,
-    marginHorizontal: 5,
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-    alignItems: "center",
-  },
-
-  tipoActive: {
-    backgroundColor: "#38BDF8",
-  },
-
-  tipoText: {
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-
-  tipoTextActive: {
-    color: "white",
-    fontWeight: "bold",
-  },
-
-  cuentaContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 20,
-  },
-
-  cuentaButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#1E293B",
-    borderRadius: 10,
-  },
-
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
-    marginTop: 10,
-  },
-
-  button: {
-    flex: 1,
-    backgroundColor: "#38BDF8",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-
-  buttonText: {
-    fontWeight: "bold",
-    color: "#0F172A",
-  },
-
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: "#1E293B",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-
-  secondaryText: {
-    color: "#94A3B8",
-    fontWeight: "600",
-  },
-
-  error: {
-    color: "#F87171",
-    marginBottom: 10,
-  },
-
-  emptyContainer: {
-    backgroundColor: "#1E293B",
-    padding: 20,
-    borderRadius: 12,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  emptyText: {
-    color: "#94A3B8",
-    marginBottom: 10,
-  },
-
-  createAccountBtn: {
-    backgroundColor: "#38BDF8",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-  },
-
-  createAccountText: {
-    color: "#0F172A",
-    fontWeight: "bold",
-  },
-
-  selectorContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 20,
-  },
-  selectorButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-    minWidth: 100,
     alignItems: "center",
     justifyContent: "center",
+    marginVertical: 20,
+  },
+  currencySymbol: {
+    color: "#38BDF8",
+    fontSize: 40,
+    fontWeight: "bold",
+    marginRight: 10,
+  },
+  montoInput: {
+    color: "white",
+    fontSize: 48,
+    fontWeight: "bold",
+    minWidth: 100,
+  },
+
+  selectorContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  selectorButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 12,
+    backgroundColor: "#1E293B",
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  selectorText: { color: "#94A3B8", fontWeight: "bold" },
+
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "#1E293B",
+    marginBottom: 5,
+  },
+  chipActive: { backgroundColor: "#38BDF8" },
+  chipText: { color: "#94A3B8", fontWeight: "500" },
+  chipTextActive: { color: "#0F172A", fontWeight: "bold" },
+
+  footer: {
+    flexDirection: "row",
+    padding: 20,
+    backgroundColor: "#1E293B",
+    gap: 10,
+  },
+  button: {
+    flex: 2,
+    backgroundColor: "#38BDF8",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonText: { fontWeight: "bold", color: "#0F172A", fontSize: 16 },
+  secondaryButton: { flex: 1, padding: 16, alignItems: "center" },
+  secondaryText: { color: "#94A3B8", fontWeight: "600" },
+
+  // ESTILOS DE ESTADO VACÍO
+  emptyCard: {
+    backgroundColor: "#1E293B",
+    padding: 15,
+    borderRadius: 12,
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: "transparent", // Borde invisible por defecto para evitar saltos visuales
+    borderStyle: "dashed",
+    borderColor: "#38BDF8",
   },
-  selectorText: {
-    color: "#94A3B8",
-    fontSize: 14,
-    fontWeight: "600",
+  emptyText: { color: "#94A3B8", marginBottom: 10, fontSize: 13 },
+  createBtn: {
+    backgroundColor: "#38BDF820",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#38BDF8",
   },
+  createBtnText: { color: "#38BDF8", fontWeight: "bold", fontSize: 12 },
+
+  errorBadge: {
+    backgroundColor: "#EF444420",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: "#EF4444",
+  },
+  errorText: { color: "#F87171", fontSize: 13, fontWeight: "500" },
 });

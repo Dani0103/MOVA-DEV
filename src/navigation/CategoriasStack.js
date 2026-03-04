@@ -9,7 +9,7 @@ const Stack = createNativeStackNavigator();
 export default function CategoriasStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="CategoriasHome" component={CategoriasScreen} />
+      <Stack.Screen name="Categorias" component={CategoriasScreen} />
       <Stack.Screen name="CrearCategoria" component={CrearCategoriaScreen} />
       <Stack.Screen
         name="DetalleCategoria"

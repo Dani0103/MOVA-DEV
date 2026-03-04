@@ -7,15 +7,19 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { universalAlert } from "../../utils/universalAlert"; // Asumiendo que usas este utilitario
+import { ArchiveAccount } from "../../services/CuentaService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function DetalleCuentaScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { token } = useAuth();
 
-  // // Extraemos la cuenta que viene de la navegación
+  // Extraemos la cuenta que viene de la navegación (desde la lista de cuentas)
   const { cuenta } = route.params;
 
-  // // Estos movimientos los traerás luego de la API
+  // Estos movimientos los traerás luego de la API
   const movimientos = [
     // { id: 1, descripcion: "Salario", tipo: "ingreso", monto: 3000000 },
     // { id: 2, descripcion: "Mercado", tipo: "gasto", monto: 320000 },
@@ -30,6 +34,32 @@ export default function DetalleCuentaScreen() {
     .filter((m) => m.tipo === "gasto")
     .reduce((acc, m) => acc + m.monto, 0);
 
+  // Función para manejar el botón de Editar
+  const handleEditar = () => {
+    // Navegamos a CrearCuentaScreen y le pasamos el objeto 'cuenta' entero
+    navigation.navigate("CrearCuenta", { cuenta: cuenta });
+  };
+
+  // Función para manejar el botón de Archivar
+  const handleArchivar = () => {
+    universalAlert(
+      "¿Archivar cuenta?",
+      "La cuenta dejará de estar activa y no se sumará al saldo total, pero podrás consultar sus movimientos históricos.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Archivar",
+          style: "destructive",
+          onPress: () => {
+            console.log("Cuenta archivada:", cuenta.id);
+
+            ArchiveAccount(cuenta.nombre, token);
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
       <ScrollView style={styles.container}>
@@ -42,9 +72,12 @@ export default function DetalleCuentaScreen() {
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
           <Text style={styles.topTitle}>Detalle de cuenta</Text>
-          {/* <TouchableOpacity style={styles.editBtn}>
-            <Ionicons name="pencil" size={20} color="#38BDF8" />
-          </TouchableOpacity> */}
+
+          {/* Botón de Editar en la TopBar */}
+          <TouchableOpacity onPress={handleEditar} style={styles.editBtnTop}>
+            <Ionicons name="pencil" size={18} color="#38BDF8" />
+            <Text style={styles.editText}>Editar</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Card principal con color dinámico */}
@@ -64,11 +97,6 @@ export default function DetalleCuentaScreen() {
                 {cuenta.tipo_cuenta?.nombre || "General"}
               </Text>
             </View>
-            {/* <Ionicons
-              name={cuenta.tipo_cuenta?.icono || "wallet-outline"}
-              size={30}
-              color={cuenta.color_hex || "#38BDF8"}
-            /> */}
           </View>
 
           <Text style={styles.balanceLabel}>Saldo Disponible</Text>
@@ -146,6 +174,17 @@ export default function DetalleCuentaScreen() {
             </Text>
           </View>
         )}
+
+        {/* --- NUEVO: Espaciador y Botón Archivar al final --- */}
+        <View style={{ height: 30 }} />
+
+        <TouchableOpacity style={styles.archiveBtn} onPress={handleArchivar}>
+          <Ionicons name="archive-outline" size={20} color="#F87171" />
+          <Text style={styles.archiveText}>Archivar Cuenta</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
+        {/* --------------------------------------------------- */}
       </ScrollView>
     </View>
   );
@@ -168,11 +207,41 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#1E293B",
   },
-  editBtn: {
-    padding: 8,
-    borderRadius: 12,
+  // NUEVOS ESTILOS PARA LOS BOTONES
+  editBtnTop: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#1E293B",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: "#334155",
   },
+  editText: {
+    color: "#38BDF8",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  archiveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(248, 113, 113, 0.05)",
+    padding: 16,
+    borderRadius: 16,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "rgba(248, 113, 113, 0.2)",
+    marginHorizontal: 10,
+  },
+  archiveText: {
+    color: "#F87171",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  // ESTILOS ANTERIORES
   topTitle: {
     color: "white",
     fontSize: 18,

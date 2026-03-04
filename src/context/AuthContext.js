@@ -4,10 +4,23 @@ import { AUTH_KEYS } from "../constants/authKeys";
 
 const AuthContext = createContext(null);
 
+export let globalLogout = () => {};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // 1. Definimos la función de logout
+  const logout = async () => {
+    await storage.remove(AUTH_KEYS.TOKEN);
+    await storage.remove(AUTH_KEYS.USER);
+    setToken(null);
+    setUser(null);
+  };
+
+  // 2. Asignamos el logout a nuestra variable global
+  globalLogout = logout;
 
   // 🔁 Cargar sesión al iniciar
   useEffect(() => {
@@ -30,19 +43,12 @@ export function AuthProvider({ children }) {
     setLoading(true);
 
     await storage.set(AUTH_KEYS.TOKEN, token);
-    await storage.set(AUTH_KEYS.USER, usuario); // ✔ guardar usuario real
+    await storage.set(AUTH_KEYS.USER, usuario);
 
     setToken(token);
     setUser(usuario);
 
     setLoading(false);
-  };
-
-  const logout = async () => {
-    await storage.remove(AUTH_KEYS.TOKEN);
-    await storage.remove(AUTH_KEYS.USER);
-    setToken(null);
-    setUser(null);
   };
 
   return (

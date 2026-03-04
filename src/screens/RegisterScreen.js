@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { registerUser } from "../services/authService";
+import { Monedas, Paises, registerUser } from "../services/authService";
 import { CURRENCIES } from "../constants/currencies";
 import { validateRegister } from "../validators/registerValidator";
 // Importamos universalAlert para consistencia
@@ -24,12 +24,14 @@ export default function RegisterScreen({ navigation }) {
   const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
   const [nacionalidad, setNacionalidad] = useState("");
-  const [moneda, setMoneda] = useState("COP");
+  const [moneda, setMoneda] = useState("");
   const [password, setPassword] = useState("");
   const [confirmedPassword, setConfirmedPassword] = useState("");
 
   const [currencies, setCurrencies] = useState([]);
-  const [loadingCurrencies, setLoadingCurrencies] = useState(true);
+  const [countries, setCountries] = useState([]);
+
+  const [loadingItems, setLoadingItems] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -78,26 +80,32 @@ export default function RegisterScreen({ navigation }) {
   useEffect(() => {
     const fetchCurrencies = async () => {
       try {
-        const response = await fetch(
-          "https://v6.exchangerate-api.com/v6/b27e1c7bfcca2c10dca98e5c/latest/USD",
-        );
-        const data = await response.json();
-        if (data.result !== "success")
-          throw new Error("Error cargando monedas");
+        setLoadingItems(true); // Asegúrate de iniciar el loading
+        const resMonedas = await Monedas();
+        const resPaises = await Paises();
 
-        const formattedCurrencies = Object.keys(data.conversion_rates).map(
-          (code) => ({
-            code,
-            label: `${code} - ${CURRENCIES[code]?.name || "Moneda por definir"}`,
-          }),
-        );
+        // Mapeo de Países: Usamos 'codigo_iso2' como el value (code)
+        const formattedCountries = resPaises.data.map((pais) => ({
+          code: pais.codigo_iso2,
+          label: pais.nombre,
+        }));
+
+        // Mapeo de Monedas: Usamos 'codigo' como el value (code)
+        const formattedCurrencies = resMonedas.data.map((moneda) => ({
+          code: moneda.codigo,
+          label: `${moneda.codigo} - ${moneda.nombre}`,
+        }));
+
+        setCountries(formattedCountries);
         setCurrencies(formattedCurrencies);
       } catch (error) {
-        universalAlert("Error", "No se pudieron cargar las monedas");
+        console.error(error);
+        universalAlert("Error", "No se pudieron cargar los datos");
       } finally {
-        setLoadingCurrencies(false);
+        setLoadingItems(false);
       }
     };
+
     fetchCurrencies();
   }, []);
 
@@ -141,12 +149,21 @@ export default function RegisterScreen({ navigation }) {
           placeholderTextColor="#64748B"
         />
 
-        <Text style={styles.label}>Nacionalidad *</Text>
+        {/* <Text style={styles.label}>Nacionalidad *</Text>
         <FormInput
           value={nacionalidad}
           onChangeText={setNacionalidad}
           placeholder="Ej: Colombiano"
           placeholderTextColor="#64748B"
+        /> */}
+
+        <Text style={styles.label}>Nacionalidad *</Text>
+        <FormSelect
+          value={nacionalidad}
+          onValueChange={setNacionalidad}
+          items={countries}
+          loading={loadingItems}
+          placeholder="Selecciona un pais"
         />
 
         <Text style={styles.label}>Moneda preferida *</Text>
@@ -154,7 +171,7 @@ export default function RegisterScreen({ navigation }) {
           value={moneda}
           onValueChange={setMoneda}
           items={currencies}
-          loading={loadingCurrencies}
+          loading={loadingItems}
           placeholder="Selecciona una moneda"
         />
 

@@ -1,70 +1,139 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { useAuth } from "../context/AuthContext";
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({
+    saldoDisponible: 0,
+    ingresos: 0,
+    gastos: 0,
+    ahorro: 0,
+    movimientos: [],
+  });
 
-  // Datos mock (luego los conectamos al backend)
-  const ingresos = 4000000;
-  const gastos = 2750000;
-  const ahorro = ingresos - gastos;
-  const saldoDisponible = 8250000;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        // Simulamos una respuesta que podría venir incompleta
+        const mockResponse = {
+          // saldoDisponible: 8250000,
+          // ingresos: 4000000,
+          // gastos: 2750000,
+          // movimientos: [
+          //   { id: "1", titulo: "Arriendo", monto: -1200000, tipo: "gasto" },
+          //   { id: "2", titulo: "Salario", monto: 3000000, tipo: "ingreso" },
+          // ],
+        };
+
+        setData({
+          saldoDisponible: mockResponse?.saldoDisponible ?? 0,
+          ingresos: mockResponse?.ingresos ?? 0,
+          gastos: mockResponse?.gastos ?? 0,
+          movimientos: Array.isArray(mockResponse?.movimientos)
+            ? mockResponse.movimientos
+            : [],
+          ahorro: (mockResponse?.ingresos ?? 0) - (mockResponse?.gastos ?? 0),
+        });
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#38BDF8" />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
-        {/* Saldo disponible */}
+        {/* Saldo con validación de número */}
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Saldo Disponible</Text>
           <Text style={styles.balanceAmount}>
-            $ {saldoDisponible.toLocaleString()}
+            $ {(data.saldoDisponible || 0).toLocaleString()}
           </Text>
         </View>
 
-        {/* Resumen mensual */}
         <View style={styles.summaryRow}>
           <View style={styles.incomeCard}>
             <Text style={styles.cardTitle}>Ingresos</Text>
-            <Text style={styles.income}>+$ {ingresos.toLocaleString()}</Text>
+            <Text style={styles.income}>
+              +$ {(data.ingresos || 0).toLocaleString()}
+            </Text>
           </View>
 
           <View style={styles.expenseCard}>
             <Text style={styles.cardTitle}>Gastos</Text>
-            <Text style={styles.expense}>-$ {gastos.toLocaleString()}</Text>
+            <Text style={styles.expense}>
+              -$ {(data.gastos || 0).toLocaleString()}
+            </Text>
           </View>
         </View>
 
-        {/* Ahorro del mes */}
         <View style={styles.savingsCard}>
           <Text style={styles.cardTitle}>Ahorro del Mes</Text>
           <Text
             style={[
               styles.savingsAmount,
-              { color: ahorro >= 0 ? "#4ADE80" : "#F87171" },
+              { color: (data.ahorro || 0) >= 0 ? "#4ADE80" : "#F87171" },
             ]}
           >
-            $ {ahorro.toLocaleString()}
+            $ {(data.ahorro || 0).toLocaleString()}
           </Text>
         </View>
 
-        {/* Últimos movimientos */}
+        {/* Sección de movimientos con validación de lista vacía */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
 
-          <View style={styles.transaction}>
-            <Text style={styles.transactionText}>Arriendo</Text>
-            <Text style={styles.expense}>- $ 1.200.000</Text>
-          </View>
-
-          <View style={styles.transaction}>
-            <Text style={styles.transactionText}>Salario</Text>
-            <Text style={styles.income}>+ $ 3.000.000</Text>
-          </View>
-
-          <View style={styles.transaction}>
-            <Text style={styles.transactionText}>Mercado</Text>
-            <Text style={styles.expense}>- $ 320.000</Text>
-          </View>
+          {data.movimientos.length > 0 ? (
+            data.movimientos.map((item) => (
+              <View key={item.id} style={styles.transaction}>
+                <Text style={styles.transactionText}>
+                  {item.titulo || "Sin título"}
+                </Text>
+                <Text
+                  style={
+                    item.tipo === "ingreso" ? styles.income : styles.expense
+                  }
+                >
+                  {item.tipo === "ingreso" ? "+" : "-"} $
+                  {Math.abs(item.monto || 0).toLocaleString()}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text
+              style={{ color: "#94A3B8", textAlign: "center", marginTop: 20 }}
+            >
+              No hay movimientos registrados
+            </Text>
+          )}
         </View>
       </ScrollView>
     </View>

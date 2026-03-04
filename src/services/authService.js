@@ -28,12 +28,26 @@ export async function registerUser({
 }
 
 // LOGIN APP
-export async function loginUser(email, password) {
+export async function loginUser(email, password, device_name) {
   return await apiFetch("/auth/login", {
     method: "POST",
     body: JSON.stringify({
       email,
       password,
+      device_name,
     }),
+  });
+}
+
+// LOGIN APP
+export async function Monedas() {
+  return await apiFetch("/monedas", {
+    method: "GET",
+  });
+}
+
+export async function Paises() {
+  return await apiFetch("/paises", {
+    method: "GET",
   });
 }
