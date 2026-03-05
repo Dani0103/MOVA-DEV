@@ -11,14 +11,28 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 export default function MovimientosScreen({
-  movimientos = [], // Valor por defecto para evitar errores
+  movimientos = [],
   loading,
   navigation,
   onRefresh,
 }) {
-  // 1. ELIMINAMOS el useState de loading local, ya que viene por props.
+  console.log("🚀 ~ MovimientosScreen ~ movimientos:", movimientos);
+  // 🔹 Función para formatear la fecha
+  const formatearFecha = (fechaString) => {
+    if (!fechaString) return "Fecha desconocida";
+    const fecha = new Date(fechaString);
 
-  // Cálculos derivados con validación
+    // Opciones para mostrar "5 de marzo"
+    const opcionesFecha = { day: "numeric", month: "long" };
+    const fechaFormateada = fecha.toLocaleDateString("es-ES", opcionesFecha);
+
+    // Opciones para mostrar la hora "15:56"
+    const opcionesHora = { hour: "2-digit", minute: "2-digit" };
+    const horaFormateada = fecha.toLocaleTimeString("es-ES", opcionesHora);
+
+    return `${fechaFormateada}, ${horaFormateada}`;
+  };
+
   const ingresos = movimientos
     .filter((m) => m?.tipo === "ingreso")
     .reduce((acc, m) => acc + (Number(m?.monto) || 0), 0);
@@ -27,7 +41,6 @@ export default function MovimientosScreen({
     .filter((m) => m?.tipo === "gasto")
     .reduce((acc, m) => acc + (Number(m?.monto) || 0), 0);
 
-  // Si está cargando y no hay datos previos, mostramos el spinner central
   if (loading && movimientos.length === 0) {
     return (
       <View
@@ -45,7 +58,6 @@ export default function MovimientosScreen({
     <View style={{ flex: 1 }}>
       <ScrollView
         style={styles.container}
-        // 🔹 Esto permite que el usuario deslice hacia abajo para actualizar
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -54,7 +66,6 @@ export default function MovimientosScreen({
           />
         }
       >
-        {/* Resumen Card con validación de valores */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Resumen del Mes</Text>
           <View style={styles.summaryRow}>
@@ -75,27 +86,41 @@ export default function MovimientosScreen({
 
         <Text style={styles.sectionTitle}>Historial</Text>
 
-        {/* Mapeo con validación de lista vacía */}
         {movimientos.length > 0 ? (
-          movimientos.map((mov) => (
-            <View key={mov.id} style={styles.transaction}>
-              <View>
-                <Text style={styles.transactionText}>
-                  {mov.descripcion || "Sin descripción"}
-                </Text>
-                <Text style={styles.metaText}>
-                  {mov.tipo === "ingreso" ? "Entrada" : "Salida"}
-                </Text>
-              </View>
+          [...movimientos]
+            .sort((a, b) => {
+              const fechaA = new Date(a.creado_en || a.fecha).getTime();
+              const fechaB = new Date(b.creado_en || b.fecha).getTime();
+              return fechaB - fechaA;
+            })
+            .map((mov) => (
+              <View key={mov.id} style={styles.transaction}>
+                <View>
+                  <Text style={styles.transactionText}>
+                    {mov.descripcion || "Sin descripción"}
+                  </Text>
+                  <View style={styles.metaContainer}>
+                    <Text style={styles.metaText}>
+                      {mov.tipo === "ingreso" ? "Entrada" : "Salida"}
+                    </Text>
+                  </View>
+                </View>
 
-              <Text
-                style={mov.tipo === "ingreso" ? styles.income : styles.expense}
-              >
-                {mov.tipo === "ingreso" ? "+" : "-"} $
-                {Number(mov.monto || 0).toLocaleString()}
-              </Text>
-            </View>
-          ))
+                <View>
+                  <Text
+                    style={
+                      mov.tipo === "ingreso" ? styles.income : styles.expense
+                    }
+                  >
+                    {mov.tipo === "ingreso" ? "+" : "-"} $
+                    {Number(mov.monto || 0).toLocaleString()}
+                  </Text>
+                  <Text style={styles.metaText}>
+                    {formatearFecha(mov.creado_en || mov.fecha)}
+                  </Text>
+                </View>
+              </View>
+            ))
         ) : (
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={48} color="#475569" />
@@ -103,11 +128,10 @@ export default function MovimientosScreen({
           </View>
         )}
 
-        {/* Espaciado final para que el FAB no tape el último item */}
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      {/* Botón Flotante (FAB) */}
+      {/* ... (Tu botón flotante sigue igual) ... */}
       <TouchableOpacity
         activeOpacity={0.7}
         style={styles.fab}
@@ -153,11 +177,13 @@ const styles = StyleSheet.create({
     color: "#4ADE80",
     fontWeight: "bold",
     fontSize: 18,
+    textAlign: "right",
   },
   expense: {
     color: "#F87171",
     fontWeight: "bold",
     fontSize: 18,
+    textAlign: "right",
   },
   sectionTitle: {
     color: "white",
@@ -208,5 +234,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+  },
+  metaContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  metaDot: {
+    color: "#64748B",
+    fontSize: 10,
+    marginHorizontal: 4,
+  },
+  metaText: {
+    color: "#64748B",
+    fontSize: 12,
   },
 });

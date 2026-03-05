@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import { useCategories } from "../../context/CategoryContext";
 import { GetCategories } from "../../services/CategoriaService";
+import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
 
 // Data de ejemplo (esto luego vendrá de tu API Laravel)
 export default function CategoriasScreen() {
@@ -19,7 +20,7 @@ export default function CategoriasScreen() {
   const { user, token } = useAuth();
 
   const { categorias, loading, refreshCategories } = useCategories();
-  const [tab, setTab] = useState("gasto"); // 'gasto' o 'ingreso'
+  const [tab, setTab] = useState("ingreso"); // 'gasto' o 'ingreso'
 
   useEffect(() => {
     refreshCategories(token, user.id);
@@ -42,26 +43,32 @@ export default function CategoriasScreen() {
 
       {/* Selector de Tipo (Tabs) */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, tab === "gasto" && styles.tabActive]}
-          onPress={() => setTab("gasto")}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
         >
-          <Text
-            style={[styles.tabText, tab === "gasto" && styles.tabTextActive]}
-          >
-            Gastos
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === "ingreso" && styles.tabActive]}
-          onPress={() => setTab("ingreso")}
-        >
-          <Text
-            style={[styles.tabText, tab === "ingreso" && styles.tabTextActive]}
-          >
-            Ingresos
-          </Text>
-        </TouchableOpacity>
+          {TRANSACTION_TYPES.map((type) => (
+            <TouchableOpacity
+              key={type.id}
+              style={[
+                styles.tab,
+                tab === type.id && styles.tabActive,
+                { minWidth: 100 }, // Asegura espacio para el texto
+              ]}
+              onPress={() => setTab(type.id)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  tab === type.id && { color: type.color || "#38BDF8" }, // Usa el color de la constante
+                ]}
+              >
+                {type.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <ScrollView

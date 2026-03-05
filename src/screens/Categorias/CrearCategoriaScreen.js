@@ -14,6 +14,7 @@ import { universalAlert } from "../../utils/universalAlert";
 import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
 import { useAuth } from "../../context/AuthContext";
 import { createCategory } from "../../services/CategoriaService";
+import { useCategories } from "../../context/CategoryContext";
 
 // Colores consistentes con CrearCuenta
 const COLORES_DISPONIBLES = [
@@ -48,10 +49,11 @@ const ICONOS_DISPONIBLES = [
 
 export default function CrearCategoriaScreen() {
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const { refreshCategories } = useCategories();
 
   const [nombre, setNombre] = useState("");
-  const [tipo, setTipo] = useState("");
+  const [tipo, setTipo] = useState("ingreso");
   const [colorSelected, setColorSelected] = useState(COLORES_DISPONIBLES[0]);
   const [iconSelected, setIconSelected] = useState(ICONOS_DISPONIBLES[0]);
   const [submitting, setSubmitting] = useState(false);
@@ -76,6 +78,10 @@ export default function CrearCategoriaScreen() {
 
       const response = await createCategory(formData, token);
       if (response) {
+        if (refreshCategories) {
+          await refreshCategories(token, user.id, true);
+        }
+
         universalAlert("¡Éxito!", "Categoría creada correctamente.", [
           {
             text: "OK",

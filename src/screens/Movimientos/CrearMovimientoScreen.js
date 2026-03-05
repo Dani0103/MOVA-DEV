@@ -21,12 +21,13 @@ export default function CrearMovimientoScreen({
   cuentas,
   setCuentas,
   categorias = [], // Añadido para validación
+  onSuccess,
 }) {
   const { token } = useAuth();
 
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
-  const [tipo, setTipo] = useState("gasto");
+  const [tipo, setTipo] = useState("ingreso");
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +64,10 @@ export default function CrearMovimientoScreen({
 
       const response = await createMovimiento(dataToSend, token);
       const mensajeExito = response?.message || "Movimiento guardado con éxito";
+
+      if (typeof onSuccess === "function") {
+        await onSuccess();
+      }
 
       universalAlert("¡Completado!", mensajeExito, [
         {
@@ -132,7 +137,10 @@ export default function CrearMovimientoScreen({
                   backgroundColor: item.color + "15",
                 },
               ]}
-              onPress={() => setTipo(item.id)}
+              onPress={() => {
+                setTipo(item.id);
+                setCategoriaSeleccionada(null);
+              }}
             >
               <Text
                 style={[
@@ -148,32 +156,43 @@ export default function CrearMovimientoScreen({
 
         {/* VALIDACIÓN CATEGORÍAS */}
         <Text style={styles.label}>Categoría</Text>
-        {!categorias || categorias.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No tienes categorías creadas</Text>
-            <TouchableOpacity
-              style={styles.createBtn}
-              onPress={() => navigation.navigate("Categorias")}
-            >
-              <Text style={styles.createBtnText}>Configurar Categorías</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.selectorContainer}>
-            {/* Filtramos por tipo para mostrar solo las relevantes */}
-            {categorias
-              .filter((c) => c.tipo === tipo)
-              .map((cat) => {
-                const isSelected = categoriaSeleccionada?.id === cat.id;
+        {(() => {
+          // 1. Filtramos las categorías por el tipo seleccionado (gasto, ingreso, etc.)
+          const categoriasPorTipo = categorias.filter((c) => c.tipo === tipo);
 
+          // 2. Si no hay ninguna categoría para ese tipo específico, mostramos el mensaje
+          if (categoriasPorTipo.length === 0) {
+            return (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>
+                  No tienes categorías de tipo "
+                  {TRANSACTION_TYPES.find((t) => t.id === tipo)?.label}"
+                </Text>
+                <TouchableOpacity
+                  style={styles.createBtn}
+                  onPress={() => navigation.navigate("Categorias")}
+                >
+                  <Text style={styles.createBtnText}>
+                    Configurar Categorías
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          }
+
+          // 3. Si existen, las mostramos
+          return (
+            <View style={styles.selectorContainer}>
+              {categoriasPorTipo.map((cat) => {
+                const isSelected = categoriaSeleccionada?.id === cat.id;
                 return (
                   <TouchableOpacity
                     key={cat.id}
                     style={[
                       styles.chip,
                       isSelected && {
-                        backgroundColor: cat.color_hex + "20", // Fondo suave (20% opacidad)
-                        borderColor: cat.color_hex, // Borde del color de la categoría
+                        backgroundColor: cat.color_hex + "20",
+                        borderColor: cat.color_hex,
                         borderWidth: 1,
                       },
                     ]}
@@ -196,8 +215,9 @@ export default function CrearMovimientoScreen({
                   </TouchableOpacity>
                 );
               })}
-          </View>
-        )}
+            </View>
+          );
+        })()}
 
         {/* VALIDACIÓN CUENTAS */}
         <Text style={styles.label}>Cuenta</Text>

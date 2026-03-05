@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState, useCallback } from "react";
-import { useNavigation } from "@react-navigation/native"; // 🔹 Importante
+import { useNavigation } from "@react-navigation/native";
 
 import MovimientosScreen from "../screens/Movimientos/MovimientosScreen";
 import CrearMovimientoScreen from "../screens/Movimientos/CrearMovimientoScreen";
@@ -12,7 +12,7 @@ import { useCategories } from "../context/CategoryContext";
 const Stack = createNativeStackNavigator();
 
 export default function MovimientosStack() {
-  const navigation = useNavigation(); // 🔹 Hook necesario para el listener 'focus'
+  const navigation = useNavigation();
   const { user, token } = useAuth();
   const { cuentas, refreshAccounts, setCuentas } = useAccounts();
   const { categorias, refreshCategories } = useCategories();
@@ -20,13 +20,11 @@ export default function MovimientosStack() {
   const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Definimos la carga de movimientos en una función reusable
+  // 1. Carga de movimientos (siempre trae datos frescos)
   const fetchMovimientosData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await loadMovimientos(token);
-      console.log("🚀 ~ MovimientosStack ~ response:", response);
-      // Laravel suele devolver { data: [...] }, asegúrate de acceder a .data
       setMovimientos(response.data || response);
     } catch (error) {
       console.error("Error al cargar movimientos:", error);
@@ -35,28 +33,29 @@ export default function MovimientosStack() {
     }
   }, [token]);
 
-  useEffect(() => {
-    // 1. Carga inicial
-    refreshAccounts(token);
-    refreshCategories(token, user.id);
-    fetchMovimientosData();
+  // 2. 🔹 EXTRAEMOS cargarTodo Y LE DAMOS LA OPCIÓN DE FORZAR (romper caché)
+  const cargarTodo = useCallback(
+    async (force = false) => {
+      // Si force es true, le decimos a los contextos que ignoren los 5 minutos de caché
+      await refreshAccounts(token, force);
+      await refreshCategories(token, user.id, force);
+      await fetchMovimientosData();
+    },
+    [token, user.id, refreshAccounts, refreshCategories, fetchMovimientosData],
+  );
 
-    // 2. 🔹 Recargar cuando el usuario entra al stack (al volver de crear movimiento)
+  // 3. useEffect ahora solo llama a nuestra función externa
+  useEffect(() => {
+    // Ejecutamos la carga inicial (sin forzar, usando caché si la hay)
+    cargarTodo(false);
+
+    // Agregamos el listener para cuando el usuario regrese a este Stack
     const unsubscribe = navigation.addListener("focus", () => {
-      refreshAccounts(token);
-      refreshCategories(token, user.id);
-      fetchMovimientosData();
+      cargarTodo(false);
     });
 
     return unsubscribe;
-  }, [
-    navigation,
-    token,
-    user.id,
-    refreshAccounts,
-    refreshCategories,
-    fetchMovimientosData,
-  ]);
+  }, []); // Ahora es seguro poner cargarTodo en las dependencias
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -66,7 +65,8 @@ export default function MovimientosStack() {
             {...props}
             movimientos={movimientos}
             loading={loading}
-            onRefresh={fetchMovimientosData} // Para un pull-to-refresh
+            // 🔹 4. Le pasamos cargarTodo(true) al pull-to-refresh
+            onRefresh={() => cargarTodo(true)}
           />
         )}
       </Stack.Screen>
@@ -77,10 +77,11 @@ export default function MovimientosStack() {
             {...props}
             movimientos={movimientos}
             setMovimientos={setMovimientos}
-            cuentas={cuentas} // Cuentas vienen del contexto global
-            setCuentas={setCuentas} // 🔹 Importante para el update del saldo
+            cuentas={cuentas}
+            setCuentas={setCuentas}
             categorias={categorias}
-            onSuccess={fetchMovimientosData} // Callback para refrescar tras guardar
+            // 🔹 5. Le pasamos cargarTodo(true) para que recargue todo tras guardar
+            onSuccess={() => cargarTodo(true)}
           />
         )}
       </Stack.Screen>
