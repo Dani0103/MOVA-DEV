@@ -42,6 +42,8 @@ const slides = [
 ];
 
 export default function OnboardingScreen({ onFinish }) {
+  const sliderRef = React.useRef(null);
+
   const renderItem = ({ item }) => {
     return (
       <View style={styles.slide}>
@@ -81,17 +83,23 @@ export default function OnboardingScreen({ onFinish }) {
     // 🔹 EL SECRETO ESTÁ AQUÍ: Envolver el Slider en un View con el color de fondo oscuro
     <View style={styles.container}>
       <AppIntroSlider
+        ref={sliderRef} // 🔹 Agregamos la referencia
         renderItem={renderItem}
         data={slides}
         onDone={onFinish}
-        showSkipButton={true} // 🔹 Permitimos omitir
-        onSkip={onFinish} // 🔹 Si omite, cuenta como terminado
+        showSkipButton={true}
+        onSkip={onFinish}
         renderDoneButton={renderDoneButton}
         renderNextButton={renderNextButton}
         renderSkipButton={renderSkipButton}
+        // 🔹 BLOQUEO DE GESTOS MANUALES
+        scrollEnabled={false} // Deshabilita el deslizamiento con el dedo
+        dotClickEnabled={false} // Deshabilita saltar pantallas tocando los puntos
+        // Estilos de los puntos
         activeDotStyle={{ backgroundColor: "#38BDF8", width: 10 }}
-        dotStyle={{ backgroundColor: "#334155" }} // Un gris más visible para el fondo oscuro
-        bottomButton={false} // Mantiene los botones alineados con los puntos
+        dotStyle={{ backgroundColor: "#334155" }}
+        // Optimizaciones de renderizado
+        keyExtractor={(item) => item.key}
       />
     </View>
   );

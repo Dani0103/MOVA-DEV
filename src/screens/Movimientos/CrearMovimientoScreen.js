@@ -113,19 +113,7 @@ export default function CrearMovimientoScreen({
           />
         </View>
 
-        <Text style={styles.label}>Descripción</Text>
-        <TextInput
-          placeholder="Ej. Cena con amigos"
-          placeholderTextColor="#94A3B8"
-          style={styles.input}
-          value={descripcion}
-          onChangeText={(v) => {
-            setDescripcion(v);
-            setError("");
-          }}
-        />
-
-        <Text style={styles.label}>Tipo</Text>
+        <Text style={styles.label}>Tipo de movimiento</Text>
         <View style={styles.selectorContainer}>
           {TRANSACTION_TYPES.map((item) => (
             <TouchableOpacity
@@ -260,6 +248,18 @@ export default function CrearMovimientoScreen({
           </View>
         )}
 
+        <Text style={styles.label}>Descripción</Text>
+        <TextInput
+          placeholder="Ej. Cena con amigos"
+          placeholderTextColor="#94A3B8"
+          style={styles.input}
+          value={descripcion}
+          onChangeText={(v) => {
+            setDescripcion(v);
+            setError("");
+          }}
+        />
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -330,6 +330,12 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "bold",
     minWidth: 100,
+    borderColor: "white",
+    borderColor: "#334155",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    textAlign: "center",
   },
 
   selectorContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
