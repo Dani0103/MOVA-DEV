@@ -23,3 +23,14 @@ export async function TypeAccount(token) {
     method: "GET",
   });
 }
+
+export async function TypeMovement(token) {
+  return await apiFetch("/enums-transacciones", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    method: "GET",
+  });
+}

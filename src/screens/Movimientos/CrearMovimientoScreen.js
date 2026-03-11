@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
 import { createMovimiento } from "../../services/MovimientosService";
 import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
+import { TypeMovement } from "../../services/CatalogoService";
 
 // Supongamos que recibes 'categorias' y 'setCateogrias' como props igual que las cuentas
 export default function CrearMovimientoScreen({
@@ -27,11 +28,13 @@ export default function CrearMovimientoScreen({
 
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
-  const [tipo, setTipo] = useState("ingreso");
+  const [tipo, setTipo] = useState("gasto");
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const [tiposMovimientos, setTiposMovimientos] = useState([]);
 
   const handleGuardar = async () => {
     if (!descripcion.trim()) return setError("La descripción es obligatoria");
@@ -86,6 +89,46 @@ export default function CrearMovimientoScreen({
     }
   };
 
+  useEffect(() => {
+    const traerTipoMovimiento = async () => {
+      try {
+        const response = await TypeMovement();
+
+        // Verificamos si la data viene correctamente
+        if (response?.data?.tipo_movimiento) {
+          const tiposFormateados = response.data.tipo_movimiento.map(
+            (tipoString) => {
+              // Buscamos el tipo en tu diccionario TRANSACTION_TYPES
+              const tipoEncontrado = TRANSACTION_TYPES.find(
+                (t) => t.id === tipoString,
+              );
+
+              // Si lo encuentra, lo usamos. Si no, creamos uno genérico por defecto
+              return (
+                tipoEncontrado || {
+                  id: tipoString,
+                  label:
+                    tipoString.charAt(0).toUpperCase() + tipoString.slice(1), // Capitaliza la primera letra
+                  icon: "help-circle",
+                  color: "#94A3B8",
+                }
+              );
+            },
+          );
+
+          setTiposMovimientos(tiposFormateados);
+        } else {
+          setTiposMovimientos([]);
+        }
+      } catch (err) {
+        console.error("Error al cargar los tipos de movimiento:", err);
+        setTiposMovimientos([]); // Forzamos el array vacío para mostrar el mensaje de error
+      }
+    };
+
+    traerTipoMovimiento();
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
@@ -114,33 +157,49 @@ export default function CrearMovimientoScreen({
         </View>
 
         <Text style={styles.label}>Tipo de movimiento</Text>
-        <View style={styles.selectorContainer}>
-          {TRANSACTION_TYPES.map((item) => (
+
+        {tiposMovimientos.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>
+              No se pudieron cargar los tipos de movimiento.
+            </Text>
+            {/* Opcional: un botón para reintentar */}
             <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.selectorButton,
-                tipo === item.id && {
-                  borderColor: item.color,
-                  backgroundColor: item.color + "15",
-                },
-              ]}
-              onPress={() => {
-                setTipo(item.id);
-                setCategoriaSeleccionada(null);
-              }}
+              style={styles.createBtn}
+              onPress={() => traerTipoMovimiento()} // Necesitarías sacar la función del useEffect para llamarla aquí
             >
-              <Text
-                style={[
-                  styles.selectorText,
-                  tipo === item.id && { color: item.color },
-                ]}
-              >
-                {item.label}
-              </Text>
+              <Text style={styles.createBtnText}>Reintentar</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          </View>
+        ) : (
+          <View style={styles.selectorContainer}>
+            {tiposMovimientos.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.selectorButton,
+                  tipo === item.id && {
+                    borderColor: item.color,
+                    backgroundColor: item.color + "15",
+                  },
+                ]}
+                onPress={() => {
+                  setTipo(item.id);
+                  setCategoriaSeleccionada(null);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.selectorText,
+                    tipo === item.id && { color: item.color },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* VALIDACIÓN CATEGORÍAS */}
         <Text style={styles.label}>Categoría</Text>
