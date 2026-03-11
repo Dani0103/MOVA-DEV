@@ -2,27 +2,26 @@ import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // 🔹 Importamos AsyncStorage
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../context/AuthContext";
 
 import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import AppLayout from "../components/layout/AppLayout";
+import PlanesScreen from "../screens/PlanesScreen"; // 🔹 IMPORTA PLANES AQUÍ
 import { navigationRef } from "./RootNavigation";
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { isAuthenticated, loading } = useAuth();
-  const [isFirstLaunch, setIsFirstLaunch] = useState(null); // Estado para el tutorial
+  const [isFirstLaunch, setIsFirstLaunch] = useState(null);
 
-  // 🔹 Verificamos en memoria si el usuario ya vio el tutorial
   useEffect(() => {
     const checkOnboarding = async () => {
       try {
         const value = await AsyncStorage.getItem("ya_vio_tutorial");
-
         if (value === null) {
           setIsFirstLaunch(true);
         } else {
@@ -38,17 +37,15 @@ export default function AppNavigator() {
     }
   }, [isAuthenticated]);
 
-  // 🔹 Función para guardar que ya terminó el tutorial
   const handleOnboardingFinish = async () => {
     try {
       await AsyncStorage.setItem("ya_vio_tutorial", "true");
-      setIsFirstLaunch(false); // Esto cambiará la pantalla automáticamente a MainApp
+      setIsFirstLaunch(false);
     } catch (error) {
       console.error("Error guardando el tutorial", error);
     }
   };
 
-  // 🔹 Esperamos a que cargue tanto el AuthContext como la validación de AsyncStorage
   if (loading || isFirstLaunch === null) {
     return (
       <View
@@ -82,7 +79,17 @@ export default function AppNavigator() {
           </Stack.Screen>
         ) : (
           // 🟢 ESTADO 3: Usuario logueado + Ya pasó el tutorial
-          <Stack.Screen name="MainApp" component={AppLayout} />
+          <>
+            {/* MainApp contiene el Drawer */}
+            <Stack.Screen name="MainApp" component={AppLayout} />
+
+            {/* 🔹 AQUÍ REGISTRAMOS LA PANTALLA DE PLANES */}
+            <Stack.Screen
+              name="Planes"
+              component={PlanesScreen}
+              options={{ presentation: "modal" }} // Hace que aparezca de abajo hacia arriba en iOS (opcional)
+            />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
 import { useState } from "react";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons"; // Asegúrate de tenerlo importado para los iconos del modal
+// ELIMINAMOS useNavigation de aquí, usaremos la prop directa
+import { Ionicons } from "@expo/vector-icons";
 
 import Header from "./Header";
 import HomeScreen from "../../screens/HomeScreen";
@@ -13,27 +13,27 @@ import CategoriasStack from "../../navigation/CategoriasStack";
 import MetasStack from "../../navigation/MetasStack";
 import DeudasStack from "../../navigation/DeudasStack";
 import EstadisticasScreen from "../../screens/EstadisticasScreen";
-import PlanesScreen from "../../screens/PlanesScreen"; // <-- IMPORTANTE: Tu nueva pantalla importada
+
 import { useAuth } from "../../context/AuthContext";
 
 const Drawer = createDrawerNavigator();
 
-export default function AppLayout() {
+// 1. AÑADIMOS la prop { navigation } aquí
+export default function AppLayout({ navigation }) {
   const { user } = useAuth();
-  const navigation = useNavigation();
 
-  // Estado para controlar el modal del paywall
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [attemptedSection, setAttemptedSection] = useState("");
 
-  const isFreePlan = user?.plan?.id === 1;
+  const isFreePlan = user?.plan?.id === 2;
+  console.log("🚀 ~ AppLayout ~ isFreePlan:", isFreePlan);
+  console.log("🚀 ~ AppLayout ~ user?.plan?.id:", user?.plan?.id);
 
-  // Interceptor genérico para secciones de pago
   const handlePremiumPress = (e, sectionName) => {
     if (isFreePlan) {
-      e.preventDefault(); // Bloquea la navegación
-      setAttemptedSection(sectionName); // Guardamos qué intentó abrir para el mensaje
-      setShowPremiumModal(true); // Mostramos el modal
+      e.preventDefault();
+      setAttemptedSection(sectionName);
+      setShowPremiumModal(true);
     }
   };
 
@@ -59,7 +59,6 @@ export default function AppLayout() {
         <Drawer.Screen name="Categorias" component={CategoriasStack} />
         <Drawer.Screen name="Movimientos" component={MovimientosStack} />
 
-        {/* --- SECCIONES BLOQUEADAS --- */}
         <Drawer.Screen
           name="Metas"
           component={MetasStack}
@@ -91,20 +90,6 @@ export default function AppLayout() {
             drawerItemStyle: isFreePlan ? { opacity: 0.5 } : {},
           }}
         />
-        {/* ----------------------------- */}
-
-        {/* --- PANTALLA DE PLANES --- */}
-        <Drawer.Screen
-          name="Planes"
-          component={PlanesScreen}
-          options={{
-            title: "🌟 Planes y Precios", // Texto llamativo
-            drawerLabelStyle: { color: "#F59E0B", fontWeight: "bold" }, // Estilo especial para destacarlo
-            // DESCOMENTA LA LÍNEA DE ABAJO SI NO QUIERES QUE SE VEA EN EL MENÚ LATERAL:
-            // drawerItemStyle: { display: 'none' }
-          }}
-        />
-        {/* -------------------------- */}
 
         <Drawer.Screen
           name="Perfil"
@@ -113,7 +98,6 @@ export default function AppLayout() {
         />
       </Drawer.Navigator>
 
-      {/* MODAL PREMIUM (PAYWALL) */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -122,15 +106,12 @@ export default function AppLayout() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* Ícono llamativo */}
             <View style={styles.iconContainer}>
               <Ionicons name="star" size={40} color="#F59E0B" />
             </View>
-
             <Text style={styles.modalTitle}>
               ¡Desbloquea {attemptedSection}!
             </Text>
-
             <Text style={styles.modalText}>
               Esta función es exclusiva de nuestro plan Premium. Mejora tu
               cuenta para acceder a herramientas avanzadas y tomar el control
@@ -149,7 +130,7 @@ export default function AppLayout() {
                 style={styles.upgradeBtn}
                 onPress={() => {
                   setShowPremiumModal(false);
-                  navigation.navigate("Planes"); // <-- Navega a la nueva pantalla de Planes
+                  navigation.navigate("Planes");
                 }}
               >
                 <Text style={styles.upgradeBtnText}>Ver Planes</Text>
