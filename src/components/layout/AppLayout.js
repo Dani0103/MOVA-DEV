@@ -25,9 +25,7 @@ export default function AppLayout({ navigation }) {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [attemptedSection, setAttemptedSection] = useState("");
 
-  const isFreePlan = user?.plan?.id === 2;
-  console.log("🚀 ~ AppLayout ~ isFreePlan:", isFreePlan);
-  console.log("🚀 ~ AppLayout ~ user?.plan?.id:", user?.plan?.id);
+  const isFreePlan = user?.plan?.id === 1;
 
   const handlePremiumPress = (e, sectionName) => {
     if (isFreePlan) {

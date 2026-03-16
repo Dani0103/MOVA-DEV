@@ -46,7 +46,7 @@ export default function AppNavigator() {
     }
   };
 
-  if (loading || isFirstLaunch === null) {
+  if (loading) {
     return (
       <View
         style={{

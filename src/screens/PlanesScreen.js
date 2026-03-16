@@ -1,41 +1,100 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
+import { MyTypePlans, TypePlans } from "../services/CatalogoService";
 
 export default function PlanesScreen({ navigation }) {
-  const { user } = useAuth();
-  const isFreePlan = user?.plan?.id === 1;
+  const { token } = useAuth();
+  const [planes, setPlanes] = useState([]);
+  const [miPlan, setMiPlan] = useState(null); // Cambiado a null para mejor control
+  const [loading, setLoading] = useState(true);
 
-  // Beneficios de cada plan
-  const planGratisFeatures = [
-    { text: "Hasta 5 cuentas", included: true },
-    { text: "Registros ilimitados", included: true },
-    { text: "Metas de ahorro", included: false },
-    { text: "Gestión de deudas", included: false },
-    { text: "Estadísticas avanzadas", included: false },
-  ];
+  useEffect(() => {
+    obtenerPlanes();
+  }, []);
 
-  const planPremiumFeatures = [
-    { text: "Cuentas ilimitadas", included: true },
-    { text: "Registros ilimitados", included: true },
-    { text: "Metas de ahorro", included: true },
-    { text: "Gestión de deudas", included: true },
-    { text: "Estadísticas avanzadas", included: true },
-  ];
+  const obtenerPlanes = async () => {
+    try {
+      setLoading(true);
+      // Ejecutamos ambas peticiones en paralelo para mayor velocidad
+      const [responsePlanes, responseMiPlan] = await Promise.all([
+        TypePlans(token),
+        MyTypePlans(token),
+      ]);
+
+      if (responsePlanes?.data) {
+        setPlanes(responsePlanes.data);
+      }
+
+      if (responseMiPlan?.data) {
+        setMiPlan(responseMiPlan.data);
+      }
+    } catch (error) {
+      console.error("Error al obtener planes:", error);
+      Alert.alert("Error", "No se pudieron cargar los datos.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderFeatures = (plan) => {
+    const { configuracion } = plan;
+    const isFree = plan.id === 1;
+
+    const features = [
+      { text: `Hasta ${configuracion.limite_cuentas} cuentas`, included: true },
+      { text: "Registros ilimitados", included: true },
+      { text: "Soporte Cripto", included: configuracion.permite_crypto },
+      { text: "Metas de ahorro", included: !isFree },
+      { text: "Estadísticas avanzadas", included: !isFree },
+    ];
+
+    return features.map((feature, index) => (
+      <View key={index} style={styles.featureItem}>
+        <Ionicons
+          name={feature.included ? "checkmark-circle" : "close-circle"}
+          size={20}
+          color={
+            feature.included ? (!isFree ? "#F59E0B" : "#10B981") : "#475569"
+          }
+        />
+        <Text
+          style={[
+            styles.featureText,
+            !feature.included && styles.featureTextDisabled,
+          ]}
+        >
+          {feature.text}
+        </Text>
+      </View>
+    ));
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#38BDF8" />
+        <Text style={{ color: "white", marginTop: 10 }}>
+          Cargando planes...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -50,92 +109,85 @@ export default function PlanesScreen({ navigation }) {
         Elige el plan que mejor se adapte a tus necesidades financieras.
       </Text>
 
-      {/* TARJETA PLAN GRATIS */}
-      <View style={[styles.planCard, isFreePlan && styles.activePlanBorder]}>
-        {isFreePlan && (
-          <View style={styles.currentBadge}>
-            <Text style={styles.currentBadgeText}>Tu plan actual</Text>
-          </View>
-        )}
-        <Text style={styles.planName}>Básico</Text>
-        <Text style={styles.planPrice}>
-          $0 <Text style={styles.planPeriod}>/ mes</Text>
-        </Text>
-        <Text style={styles.planDescription}>
-          Para empezar a organizar tus finanzas personales.
-        </Text>
+      {planes.map((plan) => {
+        // AQUÍ LA LÓGICA CRÍTICA:
+        // Comparamos el ID del plan que estamos recorriendo contra el ID de miPlan que trajo la API
+        const isCurrentPlan = miPlan?.id === plan.id;
+        const isPremiumStyle = plan.id !== 1;
 
-        <View style={styles.featuresList}>
-          {planGratisFeatures.map((feature, index) => (
-            <View key={index} style={styles.featureItem}>
-              <Ionicons
-                name={feature.included ? "checkmark-circle" : "close-circle"}
-                size={20}
-                color={feature.included ? "#10B981" : "#475569"}
-              />
+        return (
+          <View
+            key={plan.id}
+            style={[
+              styles.planCard,
+              isPremiumStyle && styles.premiumCard,
+              isCurrentPlan && styles.activePlanBorder,
+            ]}
+          >
+            {isCurrentPlan && (
+              <View style={styles.currentBadge}>
+                <Text style={styles.currentBadgeText}>Tu plan actual</Text>
+              </View>
+            )}
+
+            {isPremiumStyle && !isCurrentPlan && (
+              <View style={styles.popularBadge}>
+                <Text style={styles.popularBadgeText}>Recomendado</Text>
+              </View>
+            )}
+
+            <View style={styles.premiumHeader}>
+              {isPremiumStyle && (
+                <Ionicons name="star" size={24} color="#F59E0B" />
+              )}
               <Text
                 style={[
-                  styles.featureText,
-                  !feature.included && styles.featureTextDisabled,
+                  styles.planName,
+                  isPremiumStyle && styles.premiumPlanName,
                 ]}
               >
-                {feature.text}
+                {plan.nombre}
               </Text>
             </View>
-          ))}
-        </View>
 
-        {!isFreePlan && (
-          <TouchableOpacity style={styles.downgradeBtn}>
-            <Text style={styles.downgradeBtnText}>Cambiar al plan Básico</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+            <Text style={styles.planPrice}>
+              ${parseFloat(plan.precio).toFixed(2)}
+              <Text style={styles.planPeriod}>/ mes</Text>
+            </Text>
 
-      {/* TARJETA PLAN PREMIUM */}
-      <View
-        style={[
-          styles.planCard,
-          styles.premiumCard,
-          !isFreePlan && styles.activePlanBorder,
-        ]}
-      >
-        <View style={styles.popularBadge}>
-          <Text style={styles.popularBadgeText}>Recomendado</Text>
-        </View>
-        <View style={styles.premiumHeader}>
-          <Ionicons name="star" size={24} color="#F59E0B" />
-          <Text style={styles.premiumPlanName}>Premium</Text>
-        </View>
+            <Text style={styles.planDescription}>
+              {isPremiumStyle
+                ? "El control total para alcanzar tus metas más rápido."
+                : "Para empezar a organizar tus finanzas personales."}
+            </Text>
 
-        {/* Reemplaza $X.XX por tu precio real */}
-        <Text style={styles.planPrice}>
-          $4.99 <Text style={styles.planPeriod}>/ mes</Text>
-        </Text>
-        <Text style={styles.planDescription}>
-          El control total para alcanzar tus metas más rápido.
-        </Text>
+            <View style={styles.featuresList}>{renderFeatures(plan)}</View>
 
-        <View style={styles.featuresList}>
-          {planPremiumFeatures.map((feature, index) => (
-            <View key={index} style={styles.featureItem}>
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color="#F59E0B" // Color dorado para los checks premium
-              />
-              <Text style={styles.featureText}>{feature.text}</Text>
-            </View>
-          ))}
-        </View>
-
-        <TouchableOpacity
-          style={styles.upgradeActionBtn}
-          onPress={() => console.log("Procesar pago...")}
-        >
-          <Text style={styles.upgradeActionBtnText}>Mejorar a Premium</Text>
-        </TouchableOpacity>
-      </View>
+            {!isCurrentPlan && (
+              <TouchableOpacity
+                style={
+                  isPremiumStyle ? styles.upgradeActionBtn : styles.downgradeBtn
+                }
+                onPress={() =>
+                  Alert.alert("Próximamente", "Lógica de pago en desarrollo.")
+                }
+              >
+                <Text
+                  style={
+                    isPremiumStyle
+                      ? styles.upgradeActionBtnText
+                      : styles.downgradeBtnText
+                  }
+                >
+                  {isPremiumStyle
+                    ? `Mejorar a ${plan.nombre}`
+                    : "Cambiar al plan Básico"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      })}
 
       <View style={styles.footerSpacer} />
     </ScrollView>
@@ -149,6 +201,12 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#0F172A",
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     flexDirection: "row",
@@ -184,10 +242,10 @@ const styles = StyleSheet.create({
   },
   premiumCard: {
     backgroundColor: "#1E293B",
-    borderColor: "#F59E0B40", // Borde sutil dorado por defecto
+    borderColor: "#F59E0B40",
   },
   activePlanBorder: {
-    borderColor: "#38BDF8", // Borde azul claro si es el plan actual
+    borderColor: "#38BDF8",
   },
   currentBadge: {
     position: "absolute",
@@ -197,6 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
+    zIndex: 1,
   },
   currentBadgeText: {
     color: "#0F172A",
@@ -211,6 +270,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
+    zIndex: 1,
   },
   popularBadgeText: {
     color: "#0F172A",

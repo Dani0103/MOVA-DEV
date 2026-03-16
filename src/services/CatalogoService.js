@@ -34,3 +34,25 @@ export async function TypeMovement(token) {
     method: "GET",
   });
 }
+
+export async function TypePlans(token) {
+  return await apiFetch("/planes", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    method: "GET",
+  });
+}
+
+export async function MyTypePlans(token) {
+  return await apiFetch("/planes/mio", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    method: "GET",
+  });
+}

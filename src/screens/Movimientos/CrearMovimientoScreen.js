@@ -89,43 +89,42 @@ export default function CrearMovimientoScreen({
     }
   };
 
-  useEffect(() => {
-    const traerTipoMovimiento = async () => {
-      try {
-        const response = await TypeMovement();
+  const traerTipoMovimiento = async () => {
+    try {
+      const response = await TypeMovement();
 
-        // Verificamos si la data viene correctamente
-        if (response?.data?.tipo_movimiento) {
-          const tiposFormateados = response.data.tipo_movimiento.map(
-            (tipoString) => {
-              // Buscamos el tipo en tu diccionario TRANSACTION_TYPES
-              const tipoEncontrado = TRANSACTION_TYPES.find(
-                (t) => t.id === tipoString,
-              );
+      // Verificamos si la data viene correctamente
+      if (response?.data?.tipo_movimiento) {
+        const tiposFormateados = response.data.tipo_movimiento.map(
+          (tipoString) => {
+            // Buscamos el tipo en tu diccionario TRANSACTION_TYPES
+            const tipoEncontrado = TRANSACTION_TYPES.find(
+              (t) => t.id === tipoString,
+            );
 
-              // Si lo encuentra, lo usamos. Si no, creamos uno genérico por defecto
-              return (
-                tipoEncontrado || {
-                  id: tipoString,
-                  label:
-                    tipoString.charAt(0).toUpperCase() + tipoString.slice(1), // Capitaliza la primera letra
-                  icon: "help-circle",
-                  color: "#94A3B8",
-                }
-              );
-            },
-          );
+            // Si lo encuentra, lo usamos. Si no, creamos uno genérico por defecto
+            return (
+              tipoEncontrado || {
+                id: tipoString,
+                label: tipoString.charAt(0).toUpperCase() + tipoString.slice(1), // Capitaliza la primera letra
+                icon: "help-circle",
+                color: "#94A3B8",
+              }
+            );
+          },
+        );
 
-          setTiposMovimientos(tiposFormateados);
-        } else {
-          setTiposMovimientos([]);
-        }
-      } catch (err) {
-        console.error("Error al cargar los tipos de movimiento:", err);
-        setTiposMovimientos([]); // Forzamos el array vacío para mostrar el mensaje de error
+        setTiposMovimientos(tiposFormateados);
+      } else {
+        setTiposMovimientos([]);
       }
-    };
+    } catch (err) {
+      console.error("Error al cargar los tipos de movimiento:", err);
+      setTiposMovimientos([]); // Forzamos el array vacío para mostrar el mensaje de error
+    }
+  };
 
+  useEffect(() => {
     traerTipoMovimiento();
   }, []);
 
