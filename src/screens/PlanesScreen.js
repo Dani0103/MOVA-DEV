@@ -11,11 +11,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { MyTypePlans, TypePlans } from "../services/CatalogoService";
+import { universalAlert } from "../utils/universalAlert";
 
 export default function PlanesScreen({ navigation }) {
   const { token } = useAuth();
   const [planes, setPlanes] = useState([]);
-  const [miPlan, setMiPlan] = useState(null); // Cambiado a null para mejor control
+  const [miPlan, setMiPlan] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +26,6 @@ export default function PlanesScreen({ navigation }) {
   const obtenerPlanes = async () => {
     try {
       setLoading(true);
-      // Ejecutamos ambas peticiones en paralelo para mayor velocidad
       const [responsePlanes, responseMiPlan] = await Promise.all([
         TypePlans(token),
         MyTypePlans(token),
@@ -40,10 +40,19 @@ export default function PlanesScreen({ navigation }) {
       }
     } catch (error) {
       console.error("Error al obtener planes:", error);
-      Alert.alert("Error", "No se pudieron cargar los datos.");
+      Alert.alert("Error", "No se pudieron cargar los datos de los planes.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // MANEJADOR DE MANTENIMIENTO
+  const handlePlanAction = (planNombre) => {
+    universalAlert(
+      "Módulo en Mantenimiento 🛠️",
+      `Estamos actualizando nuestra pasarela de pagos para ofrecerte una mejor experiencia al adquirir el plan ${planNombre}.\n\nPor favor, intenta de nuevo más tarde.`,
+      [{ text: "Entendido", style: "default" }],
+    );
   };
 
   const renderFeatures = (plan) => {
@@ -64,7 +73,11 @@ export default function PlanesScreen({ navigation }) {
           name={feature.included ? "checkmark-circle" : "close-circle"}
           size={20}
           color={
-            feature.included ? (!isFree ? "#F59E0B" : "#10B981") : "#475569"
+            feature.included
+              ? plan.id !== 1
+                ? "#F59E0B"
+                : "#10B981"
+              : "#475569"
           }
         />
         <Text
@@ -110,8 +123,6 @@ export default function PlanesScreen({ navigation }) {
       </Text>
 
       {planes.map((plan) => {
-        // AQUÍ LA LÓGICA CRÍTICA:
-        // Comparamos el ID del plan que estamos recorriendo contra el ID de miPlan que trajo la API
         const isCurrentPlan = miPlan?.id === plan.id;
         const isPremiumStyle = plan.id !== 1;
 
@@ -151,7 +162,7 @@ export default function PlanesScreen({ navigation }) {
             </View>
 
             <Text style={styles.planPrice}>
-              ${parseFloat(plan.precio).toFixed(2)}
+              ${parseFloat(plan.precio).toLocaleString()}
               <Text style={styles.planPeriod}>/ mes</Text>
             </Text>
 
@@ -168,9 +179,7 @@ export default function PlanesScreen({ navigation }) {
                 style={
                   isPremiumStyle ? styles.upgradeActionBtn : styles.downgradeBtn
                 }
-                onPress={() =>
-                  Alert.alert("Próximamente", "Lógica de pago en desarrollo.")
-                }
+                onPress={() => handlePlanAction(plan.nombre)}
               >
                 <Text
                   style={
@@ -195,13 +204,8 @@ export default function PlanesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0F172A",
-  },
-  contentContainer: {
-    padding: 20,
-  },
+  container: { flex: 1, backgroundColor: "#0F172A" },
+  contentContainer: { padding: 20 },
   loadingContainer: {
     flex: 1,
     backgroundColor: "#0F172A",
@@ -220,11 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E293B",
     borderRadius: 10,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-  },
+  headerTitle: { fontSize: 24, fontWeight: "bold", color: "white" },
   subtitle: {
     color: "#94A3B8",
     fontSize: 16,
@@ -240,13 +240,8 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     position: "relative",
   },
-  premiumCard: {
-    backgroundColor: "#1E293B",
-    borderColor: "#F59E0B40",
-  },
-  activePlanBorder: {
-    borderColor: "#38BDF8",
-  },
+  premiumCard: { backgroundColor: "#1E293B", borderColor: "#F59E0B40" },
+  activePlanBorder: { borderColor: "#38BDF8" },
   currentBadge: {
     position: "absolute",
     top: -12,
@@ -257,11 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     zIndex: 1,
   },
-  currentBadgeText: {
-    color: "#0F172A",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
+  currentBadgeText: { color: "#0F172A", fontSize: 12, fontWeight: "bold" },
   popularBadge: {
     position: "absolute",
     top: -12,
@@ -272,11 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     zIndex: 1,
   },
-  popularBadgeText: {
-    color: "#0F172A",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
+  popularBadgeText: { color: "#0F172A", fontSize: 12, fontWeight: "bold" },
   planName: {
     color: "white",
     fontSize: 22,
@@ -289,22 +276,14 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     gap: 8,
   },
-  premiumPlanName: {
-    color: "#F59E0B",
-    fontSize: 22,
-    fontWeight: "bold",
-  },
+  premiumPlanName: { color: "#F59E0B", fontSize: 22, fontWeight: "bold" },
   planPrice: {
     color: "white",
     fontSize: 36,
     fontWeight: "bold",
     marginBottom: 10,
   },
-  planPeriod: {
-    fontSize: 16,
-    color: "#94A3B8",
-    fontWeight: "normal",
-  },
+  planPeriod: { fontSize: 16, color: "#94A3B8", fontWeight: "normal" },
   planDescription: {
     color: "#94A3B8",
     fontSize: 14,
@@ -317,19 +296,9 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     gap: 12,
   },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  featureText: {
-    color: "white",
-    fontSize: 15,
-  },
-  featureTextDisabled: {
-    color: "#64748B",
-    textDecorationLine: "line-through",
-  },
+  featureItem: { flexDirection: "row", alignItems: "center", gap: 10 },
+  featureText: { color: "white", fontSize: 15 },
+  featureTextDisabled: { color: "#64748B", textDecorationLine: "line-through" },
   downgradeBtn: {
     marginTop: 25,
     paddingVertical: 14,
@@ -339,11 +308,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#334155",
   },
-  downgradeBtnText: {
-    color: "#94A3B8",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  downgradeBtnText: { color: "#94A3B8", fontWeight: "bold", fontSize: 16 },
   upgradeActionBtn: {
     marginTop: 25,
     paddingVertical: 14,
@@ -351,12 +316,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F59E0B",
     alignItems: "center",
   },
-  upgradeActionBtnText: {
-    color: "#0F172A",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  footerSpacer: {
-    height: 40,
-  },
+  upgradeActionBtnText: { color: "#0F172A", fontWeight: "bold", fontSize: 16 },
+  footerSpacer: { height: 40 },
 });

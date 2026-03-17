@@ -112,12 +112,14 @@ export default function InfoPersonal() {
           <View style={styles.devIconCircle}>
             <Ionicons name="help-buoy-outline" size={22} color="#F87171" />
           </View>
-          <View style={styles.devTextContainer}>
-            <Text style={styles.devTitle}>Ver Tutorial de Bienvenida</Text>
-            <Text style={styles.devSubtitle}>
-              Reinicia el tour guiado de la aplicación
-            </Text>
-          </View>
+          {user.id === 1 && (
+            <View style={styles.devTextContainer}>
+              <Text style={styles.devTitle}>Ver Tutorial de Bienvenida</Text>
+              <Text style={styles.devSubtitle}>
+                Reinicia el tour guiado de la aplicación
+              </Text>
+            </View>
+          )}
           <Ionicons name="chevron-forward" size={20} color="#475569" />
         </TouchableOpacity>
 
