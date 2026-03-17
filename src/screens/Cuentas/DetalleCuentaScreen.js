@@ -74,10 +74,10 @@ export default function DetalleCuentaScreen() {
           <Text style={styles.topTitle}>Detalle de cuenta</Text>
 
           {/* Botón de Editar en la TopBar */}
-          <TouchableOpacity onPress={handleEditar} style={styles.editBtnTop}>
+          {/* <TouchableOpacity onPress={handleEditar} style={styles.editBtnTop}>
             <Ionicons name="pencil" size={18} color="#38BDF8" />
             <Text style={styles.editText}>Editar</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Card principal con color dinámico */}
@@ -178,10 +178,10 @@ export default function DetalleCuentaScreen() {
         {/* --- NUEVO: Espaciador y Botón Archivar al final --- */}
         <View style={{ height: 30 }} />
 
-        <TouchableOpacity style={styles.archiveBtn} onPress={handleArchivar}>
+        {/* <TouchableOpacity style={styles.archiveBtn} onPress={handleArchivar}>
           <Ionicons name="archive-outline" size={20} color="#F87171" />
           <Text style={styles.archiveText}>Archivar Cuenta</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <View style={{ height: 40 }} />
         {/* --------------------------------------------------- */}

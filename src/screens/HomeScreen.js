@@ -7,9 +7,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { GetDashboard } from "../services/Dashboard";
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     saldoDisponible: 0,
@@ -23,28 +24,26 @@ export default function HomeScreen() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Simulamos una respuesta que podría venir incompleta
-        const mockResponse = {
-          // saldoDisponible: 8250000,
-          // ingresos: 4000000,
-          // gastos: 2750000,
-          // movimientos: [
-          //   { id: "1", titulo: "Arriendo", monto: -1200000, tipo: "gasto" },
-          //   { id: "2", titulo: "Salario", monto: 3000000, tipo: "ingreso" },
-          // ],
-        };
+        const response = await GetDashboard(token);
+        console.log("🚀 ~ fetchData ~ response:", response);
 
-        setData({
-          saldoDisponible: mockResponse?.saldoDisponible ?? 0,
-          ingresos: mockResponse?.ingresos ?? 0,
-          gastos: mockResponse?.gastos ?? 0,
-          movimientos: Array.isArray(mockResponse?.movimientos)
-            ? mockResponse.movimientos
-            : [],
-          ahorro: (mockResponse?.ingresos ?? 0) - (mockResponse?.gastos ?? 0),
-        });
+        // Extraemos el objeto data dentro de la respuesta
+        const apiData = response?.data;
+
+        if (apiData) {
+          setData({
+            // Convertimos los strings numéricos ("3000.00") a números reales
+            saldoDisponible: parseFloat(apiData.salario_disponible || 0),
+            ingresos: parseFloat(apiData.ingresos || 0),
+            gastos: parseFloat(apiData.gastos || 0),
+            ahorro: parseFloat(apiData.ahorros || 0),
+            // Mapeamos los movimientos verificando que sea un Array
+            movimientos: Array.isArray(apiData.ultimos_movimientos)
+              ? apiData.ultimos_movimientos
+              : [],
+          });
+        }
       } catch (error) {
         console.error("Error cargando datos:", error);
       } finally {
@@ -53,7 +52,7 @@ export default function HomeScreen() {
     };
 
     fetchData();
-  }, []);
+  }, [token]);
 
   if (loading) {
     return (

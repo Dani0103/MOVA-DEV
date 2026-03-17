@@ -26,7 +26,9 @@ export default function CategoriasScreen() {
     refreshCategories(token, user.id);
   }, []);
 
-  const categoriasFiltradas = categorias.filter((c) => c.tipo === tab);
+  const categoriasFiltradas = categorias.filter(
+    (c) => c.tipo === tab && c.usuario_id == user?.id,
+  );
 
   return (
     <View style={styles.container}>

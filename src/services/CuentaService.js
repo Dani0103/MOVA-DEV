@@ -46,7 +46,7 @@ export async function updateAccount(cuenta, formData, token) {
     activa: true,
   };
 
-  return await apiFetch(`/cuentas`, {
+  return await apiFetch(`/cuentas/${cuenta}`, {
     // Quitamos /api si ya está en la base config
     method: "PUT",
     headers: {

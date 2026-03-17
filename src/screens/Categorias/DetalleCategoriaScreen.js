@@ -15,32 +15,34 @@ export default function DetalleCategoriaScreen() {
 
   // Recibimos la categoría por parámetros
   const { categoria } = route.params;
+  console.log("🚀 ~ DetalleCategoriaScreen ~ categoria:", categoria);
 
   // Mock de movimientos filtrados por esta categoría
   // En el futuro, esto vendrá de un query a tu API: /movimientos?categoria_id=X
-  const movimientos = [
-    {
-      id: 1,
-      descripcion: "Cena familiar",
-      monto: 85000,
-      fecha: "Hoy",
-      tipo: "gasto",
-    },
-    {
-      id: 2,
-      descripcion: "Supermercado",
-      monto: 120000,
-      fecha: "Ayer",
-      tipo: "gasto",
-    },
-    {
-      id: 3,
-      descripcion: "Almuerzo oficina",
-      monto: 25000,
-      fecha: "25 Feb",
-      tipo: "gasto",
-    },
-  ];
+  // const movimientos = [
+  //   {
+  //     id: 1,
+  //     descripcion: "Cena familiar",
+  //     monto: 85000,
+  //     fecha: "Hoy",
+  //     tipo: "gasto",
+  //   },
+  //   {
+  //     id: 2,
+  //     descripcion: "Supermercado",
+  //     monto: 120000,
+  //     fecha: "Ayer",
+  //     tipo: "gasto",
+  //   },
+  //   {
+  //     id: 3,
+  //     descripcion: "Almuerzo oficina",
+  //     monto: 25000,
+  //     fecha: "25 Feb",
+  //     tipo: "gasto",
+  //   },
+  // ];
+  const movimientos = [];
 
   const totalMonto = movimientos.reduce((acc, mov) => acc + mov.monto, 0);
 

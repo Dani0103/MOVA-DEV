@@ -16,6 +16,7 @@ export default function MovimientosScreen({
   navigation,
   onRefresh,
 }) {
+  console.log("🚀 ~ MovimientosScreen ~ movimientos:", movimientos);
   // 🔹 Función para formatear la fecha
   const formatearFecha = (fechaString) => {
     if (!fechaString) return "Fecha desconocida";

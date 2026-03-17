@@ -28,7 +28,7 @@ export default function CrearMovimientoScreen({
 
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
-  const [tipo, setTipo] = useState("gasto");
+  const [tipo, setTipo] = useState(null);
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -203,10 +203,27 @@ export default function CrearMovimientoScreen({
         {/* VALIDACIÓN CATEGORÍAS */}
         <Text style={styles.label}>Categoría</Text>
         {(() => {
-          // 1. Filtramos las categorías por el tipo seleccionado (gasto, ingreso, etc.)
+          // 1. Validamos primero si ya se seleccionó un tipo de movimiento
+          if (!tipo) {
+            return (
+              <View
+                style={[
+                  styles.emptyCard,
+                  { borderStyle: "solid", borderColor: "#334155" },
+                ]}
+              >
+                <Text style={styles.emptyText}>
+                  Selecciona primero un tipo de movimiento para ver las
+                  categorías.
+                </Text>
+              </View>
+            );
+          }
+
+          // 2. Filtramos las categorías por el tipo seleccionado
           const categoriasPorTipo = categorias.filter((c) => c.tipo === tipo);
 
-          // 2. Si no hay ninguna categoría para ese tipo específico, mostramos el mensaje
+          // 3. Si se seleccionó tipo pero no hay categorías creadas para ese tipo
           if (categoriasPorTipo.length === 0) {
             return (
               <View style={styles.emptyCard}>
@@ -226,7 +243,7 @@ export default function CrearMovimientoScreen({
             );
           }
 
-          // 3. Si existen, las mostramos
+          // 4. Si existen, las mostramos
           return (
             <View style={styles.selectorContainer}>
               {categoriasPorTipo.map((cat) => {
