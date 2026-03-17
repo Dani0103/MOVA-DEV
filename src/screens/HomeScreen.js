@@ -26,7 +26,6 @@ export default function HomeScreen() {
         setLoading(true);
 
         const response = await GetDashboard(token);
-        console.log("🚀 ~ fetchData ~ response:", response);
 
         // Extraemos el objeto data dentro de la respuesta
         const apiData = response?.data;

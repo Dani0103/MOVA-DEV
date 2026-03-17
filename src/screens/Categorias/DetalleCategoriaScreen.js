@@ -15,7 +15,6 @@ export default function DetalleCategoriaScreen() {
 
   // Recibimos la categoría por parámetros
   const { categoria } = route.params;
-  console.log("🚀 ~ DetalleCategoriaScreen ~ categoria:", categoria);
 
   // Mock de movimientos filtrados por esta categoría
   // En el futuro, esto vendrá de un query a tu API: /movimientos?categoria_id=X

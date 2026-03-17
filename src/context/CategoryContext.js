@@ -25,7 +25,6 @@ export const CategoryProvider = ({ children }) => {
       try {
         setLoading(true);
         const response = await GetCategories(token);
-        console.log("🚀 ~ CategoryProvider ~ response:", response);
 
         // Filtramos por el usuario aquí mismo para que el context
         // solo guarde lo que le pertenece al usuario logueado
