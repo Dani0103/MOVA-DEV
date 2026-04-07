@@ -64,19 +64,23 @@ export default function CrearCuentaScreen() {
         setTiposCuenta(dataCuentas.data);
         setTiposMoneda(dataMonedas.data);
 
-        // Solo establecemos valores por defecto si NO estamos editando
+        // Lógica de selección automática
         if (!esEdicion) {
-          if (user?.moneda_id) {
-            setMonedaId(user.moneda_id);
+          // 1. Buscamos en la lista de la API la moneda que coincida con el código del usuario
+          const monedaPreferida = dataMonedas.data?.find(
+            (m) => m.codigo === user?.moneda,
+          );
+
+          if (monedaPreferida) {
+            // 2. Si la encuentra, seteamos su ID
+            setMonedaId(monedaPreferida.id);
           } else if (dataMonedas.data?.length > 0) {
+            // 3. Fallback: si no hay coincidencia, seleccionamos la primera de la lista
             setMonedaId(dataMonedas.data[0].id);
           }
         }
       } catch (err) {
-        universalAlert(
-          "Error",
-          "No se pudieron cargar los catálogos de cuenta.",
-        );
+        universalAlert("Error", "No se pudieron cargar los catálogos.");
       } finally {
         setLoading(false);
       }

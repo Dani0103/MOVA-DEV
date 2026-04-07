@@ -94,8 +94,13 @@ export default function MovimientosScreen({
             })
             .map((mov) => (
               <View key={mov.id} style={styles.transaction}>
-                <View>
-                  <Text style={styles.transactionText}>
+                {/* Agregamos styles.leftContainer que tiene flex: 1 */}
+                <View style={styles.leftContainer}>
+                  <Text
+                    style={styles.transactionText}
+                    numberOfLines={1} // Limita a una línea
+                    ellipsizeMode="tail" // Agrega los "..." al final
+                  >
                     {mov.descripcion || "Sin descripción"}
                   </Text>
                   <View style={styles.metaContainer}>
@@ -105,16 +110,18 @@ export default function MovimientosScreen({
                   </View>
                 </View>
 
-                <View>
+                {/* Contenedor derecho (Monto y fecha) */}
+                <View style={styles.rightContainer}>
                   <Text
-                    style={
-                      mov.tipo === "ingreso" ? styles.income : styles.expense
-                    }
+                    style={[
+                      styles.amountText, // Estilo base para el monto
+                      mov.tipo === "ingreso" ? styles.income : styles.expense,
+                    ]}
                   >
                     {mov.tipo === "ingreso" ? "+" : "-"} $
                     {Number(mov.monto || 0).toLocaleString()}
                   </Text>
-                  <Text style={styles.metaText}>
+                  <Text style={styles.metaTextRight}>
                     {formatearFecha(mov.creado_en || mov.fecha)}
                   </Text>
                 </View>
@@ -247,5 +254,40 @@ const styles = StyleSheet.create({
   metaText: {
     color: "#64748B",
     fontSize: 12,
+  },
+
+  transaction: {
+    backgroundColor: "#1E293B",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center", // Alinea verticalmente al centro
+    gap: 10, // Espacio mínimo entre izquierda y derecha
+  },
+  leftContainer: {
+    flex: 1, // <--- ESTO ES LA CLAVE: Toma todo el espacio sobrante
+    marginRight: 10, // Espacio de seguridad antes del monto
+  },
+  rightContainer: {
+    alignItems: "flex-end", // Alinea el monto y la fecha a la derecha
+    minWidth: 80, // Evita que el monto se vea muy apretado
+  },
+  transactionText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "500",
+    // No hace falta flex aquí si el padre ya lo tiene
+  },
+  amountText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  metaTextRight: {
+    color: "#64748B",
+    fontSize: 10, // Un poco más pequeña para que quepa mejor
+    marginTop: 2,
+    textAlign: "right",
   },
 });
