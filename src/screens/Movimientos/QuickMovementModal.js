@@ -166,6 +166,14 @@ export default function QuickMovementModal({
     }
   };
 
+  const montoLimpio = monto.replace(/,/g, "");
+  const esMontoInvalido = !montoLimpio || parseFloat(montoLimpio) <= 0;
+
+  const isStepInvalid =
+    (step === 1 && esMontoInvalido) ||
+    (step === 2 && !categoriaSeleccionada) ||
+    (step === 3 && !cuentaSeleccionada);
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <KeyboardAvoidingView
@@ -328,16 +336,14 @@ export default function QuickMovementModal({
             <TouchableOpacity
               style={[
                 styles.nextBtn,
-                (!monto ||
-                  (step === 2 && !categoriaSeleccionada) ||
-                  (step === 3 && !cuentaSeleccionada)) &&
-                  styles.disabledBtn,
+                (submitting || isStepInvalid) && styles.disabledBtn, // Aplicamos estilo si está enviando o es inválido
               ]}
               onPress={() => {
                 if (step < 3) setStep(step + 1);
                 else handleFinish();
               }}
-              disabled={submitting}
+              // 🔹 AQUÍ ESTÁ EL CAMBIO CLAVE:
+              disabled={submitting || isStepInvalid}
             >
               {submitting ? (
                 <ActivityIndicator color="#0F172A" />
