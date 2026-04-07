@@ -74,6 +74,7 @@ export default function QuickMovementModal({
     }
   };
 
+  // 🔹 Función para el formateo visual (Mantiene el estado con comas)
   const handleMontoChange = (text) => {
     // 1. Quitamos todo lo que no sea número o punto
     let rawValue = text.replace(/[^0-9.]/g, "");
@@ -84,30 +85,42 @@ export default function QuickMovementModal({
       rawValue = parts[0] + "." + parts.slice(1).join("");
     }
 
-    // 3. Formateamos con comas para la vista
+    // 3. Separamos parte entera de decimal
     const [integerPart, decimalPart] = rawValue.split(".");
 
-    // Agregamos comas cada 3 dígitos usando regex
+    // 4. Formateamos la parte entera con comas
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    // Recomponemos el string (manteniendo el punto si el usuario lo escribió)
+    // 5. Recomponemos: si hay punto, lo mantenemos; si hay decimales, también.
     const finalValue =
       decimalPart !== undefined
         ? `${formattedInteger}.${decimalPart}`
-        : formattedInteger;
+        : rawValue.includes(".")
+          ? `${formattedInteger}.`
+          : formattedInteger;
 
     setMonto(finalValue);
   };
 
   const handleFinish = async () => {
     setSubmitting(true);
-    const montoNum = parseFloat(monto);
+
+    // 1. QUITAMOS LAS COMAS: "1,250.50" -> "1250.50"
+    const montoSinComas = monto.replace(/,/g, "");
+    const montoNum = parseFloat(montoSinComas);
+
+    // Validación de seguridad
+    if (isNaN(montoNum) || montoNum <= 0) {
+      universalAlert("Error", "Por favor ingresa un monto válido.");
+      setSubmitting(false);
+      return;
+    }
 
     const dataToSend = {
       cuenta_origen_id: tipo === "gasto" ? cuentaSeleccionada?.id : null,
       cuenta_destino_id: tipo === "ingreso" ? cuentaSeleccionada?.id : null,
       categoria_id: categoriaSeleccionada?.id,
-      monto: montoNum,
+      monto: montoNum, // <--- Aquí ya va el número limpio
       tipo: tipo,
       estado: "completada",
       fecha: new Date().toISOString().split("T")[0],
