@@ -397,13 +397,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end", // Empuja todo a la derecha
-    marginTop: 40,
+    marginTop: 10,
     backgroundColor: "#1E293B", // Fondo sutil para el área del input
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#334155",
+    width: "100%",
   },
   montoSymbol: {
     color: "#38BDF8",
