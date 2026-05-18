@@ -14,6 +14,7 @@ import DeudasStack from "../../navigation/DeudasStack";
 import PresupuestosStack from "../../navigation/PresupuestosStack";
 import RecurrentesStack from "../../navigation/RecurrentesStack";
 import EstadisticasScreen from "../../screens/EstadisticasScreen";
+import AdminScreen from "../../screens/Admin/AdminScreen";
 
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../theme/useTheme";
@@ -88,6 +89,18 @@ export default function AppLayout({ navigation }) {
             drawerItemStyle: isFreePlan ? { opacity: 0.5 } : {},
           }}
         />
+        {user?.email === 'fepiperuiz11@gmail.com' && (
+          <Drawer.Screen
+            name="Admin"
+            component={AdminScreen}
+            options={{
+              title: "Panel Admin",
+              drawerIcon: ({ color, size }) => (
+                <Ionicons name="shield-checkmark-outline" size={size} color={color} />
+              ),
+            }}
+          />
+        )}
         <Drawer.Screen
           name="Perfil"
           component={InfoPersonal}

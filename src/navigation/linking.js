@@ -83,6 +83,7 @@ const linking = {
           },
 
           "Estadísticas": "estadisticas",
+          Admin:          "admin",
           Perfil:         "perfil",
         },
       },
