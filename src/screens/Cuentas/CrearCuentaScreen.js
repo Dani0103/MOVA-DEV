@@ -63,7 +63,13 @@ export default function CrearCuentaScreen() {
         const dataCuentas = await TypeAccount(token);
         const dataMonedas = await TypeCurrency(token);
 
-        setTiposCuenta(dataCuentas.data);
+        // Filtrar tipos crypto si el plan no lo permite
+        const permiteCrypto = user?.plan?.configuracion?.permite_crypto ?? true;
+        const tiposFiltrados = permiteCrypto
+          ? dataCuentas.data
+          : dataCuentas.data.filter((t) => !/crypto/i.test(t.nombre));
+
+        setTiposCuenta(tiposFiltrados);
         setTiposMoneda(dataMonedas.data);
 
         // Lógica de selección automática

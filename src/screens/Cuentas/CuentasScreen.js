@@ -15,6 +15,7 @@ import { GetAccount } from "../../services/CuentaService";
 import { useAuth } from "../../context/AuthContext";
 import { useAccounts } from "../../context/AccountContext";
 import { useTheme } from "../../theme/useTheme";
+import UpgradeModal from "../../components/shared/UpgradeModal";
 
 export default function CuentasScreen() {
   const theme = useTheme();
@@ -22,8 +23,14 @@ export default function CuentasScreen() {
   const { token } = useAuth();
 
   // 🔹 Obtenemos los estados y funciones globales
+  const { user } = useAuth();
   const { cuentas, loading, refreshAccounts } = useAccounts();
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing]     = useState(false);
+  const [showUpgrade, setShowUpgrade]   = useState(false);
+
+  const limiteCuentas = user?.plan?.configuracion?.limite_cuentas ?? null;
+  const cuentasActivas = cuentas.length;
+  const limiteAlcanzado = limiteCuentas !== null && cuentasActivas >= limiteCuentas;
 
   const loadData = async () => {
     try {
@@ -83,14 +90,28 @@ export default function CuentasScreen() {
         }
       >
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: theme.text }]}>Mis Cuentas</Text>
+          <View>
+            <Text style={[styles.title, { color: theme.text }]}>Mis Cuentas</Text>
+            {limiteCuentas !== null && (
+              <Text style={[styles.limitBadge, { color: limiteAlcanzado ? "#F87171" : theme.textMuted }]}>
+                {cuentasActivas}/{limiteCuentas} cuentas usadas
+              </Text>
+            )}
+          </View>
           <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: theme.primary }]}
-            onPress={() => navigation.navigate("CrearCuenta")}
+            style={[styles.addButton, { backgroundColor: limiteAlcanzado ? "#F87171" : theme.primary }]}
+            onPress={() => limiteAlcanzado ? setShowUpgrade(true) : navigation.navigate("CrearCuenta")}
           >
-            <Ionicons name="add" size={24} color="white" />
+            <Ionicons name={limiteAlcanzado ? "lock-closed" : "add"} size={22} color="white" />
           </TouchableOpacity>
         </View>
+
+        <UpgradeModal
+          visible={showUpgrade}
+          onClose={() => setShowUpgrade(false)}
+          title="Límite de cuentas alcanzado"
+          message={`Tu plan Gratis permite hasta ${limiteCuentas} cuentas. Actualiza al plan Pro para crear hasta 20 cuentas.`}
+        />
 
         {loading ? (
           <ActivityIndicator
@@ -205,6 +226,10 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     justifyContent: "center",
     alignItems: "center",
+  },
+  limitBadge: {
+    fontSize: 12,
+    marginTop: 2,
   },
   emptyContainer: {
     padding: 60,

@@ -14,6 +14,7 @@ import { useAuth } from "../../context/AuthContext";
 import { loadPresupuestos, deletePresupuesto } from "../../services/PresupuestosService";
 import { universalAlert } from "../../utils/universalAlert";
 import { useTheme } from "../../theme/useTheme";
+import UpgradeModal from "../../components/shared/UpgradeModal";
 
 const COLOR_GREEN = "#4ADE80";
 const COLOR_ORANGE = "#FB923C";
@@ -40,11 +41,15 @@ function formatAmount(amount, moneda) {
 export default function PresupuestosScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [presupuestos, setPresupuestos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading]           = useState(true);
+  const [refreshing, setRefreshing]     = useState(false);
+  const [showUpgrade, setShowUpgrade]   = useState(false);
+
+  const limite = user?.plan?.configuracion?.limite_presupuestos ?? null;
+  const limiteAlcanzado = limite !== null && presupuestos.length >= limite;
 
   const fetchPresupuestos = useCallback(async () => {
     try {
@@ -103,14 +108,28 @@ export default function PresupuestosScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: theme.text }]}>Presupuestos</Text>
+        <View>
+          <Text style={[styles.title, { color: theme.text }]}>Presupuestos</Text>
+          {limite !== null && (
+            <Text style={{ fontSize: 12, marginTop: 2, color: limiteAlcanzado ? "#F87171" : theme.textMuted }}>
+              {presupuestos.length}/{limite} usados
+            </Text>
+          )}
+        </View>
         <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: theme.primary }]}
-          onPress={() => navigation.navigate("CrearPresupuesto")}
+          style={[styles.addButton, { backgroundColor: limiteAlcanzado ? "#F87171" : theme.primary }]}
+          onPress={() => limiteAlcanzado ? setShowUpgrade(true) : navigation.navigate("CrearPresupuesto")}
         >
-          <Ionicons name="add" size={24} color="white" />
+          <Ionicons name={limiteAlcanzado ? "lock-closed" : "add"} size={22} color="white" />
         </TouchableOpacity>
       </View>
+
+      <UpgradeModal
+        visible={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        title="Límite de presupuestos alcanzado"
+        message={`Tu plan Gratis permite hasta ${limite} presupuestos. Actualiza al plan Pro para crear presupuestos ilimitados.`}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

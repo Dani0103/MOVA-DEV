@@ -19,6 +19,7 @@ import {
 } from "../../services/RecurrentesService";
 import { universalAlert } from "../../utils/universalAlert";
 import { useTheme } from "../../theme/useTheme";
+import UpgradeModal from "../../components/shared/UpgradeModal";
 
 const TIPO_COLORS = {
   gasto: "#F87171",
@@ -71,11 +72,15 @@ function formatAmount(monto, cuenta) {
 export default function RecurrentesScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [recurrentes, setRecurrentes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading]         = useState(true);
+  const [refreshing, setRefreshing]   = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  const limite = user?.plan?.configuracion?.limite_recurrentes ?? null;
+  const limiteAlcanzado = limite !== null && recurrentes.length >= limite;
 
   const fetchRecurrentes = useCallback(async () => {
     try {
@@ -158,14 +163,28 @@ export default function RecurrentesScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: theme.text }]}>Recurrentes</Text>
+        <View>
+          <Text style={[styles.title, { color: theme.text }]}>Recurrentes</Text>
+          {limite !== null && (
+            <Text style={{ fontSize: 12, marginTop: 2, color: limiteAlcanzado ? "#F87171" : theme.textMuted }}>
+              {recurrentes.length}/{limite} usados
+            </Text>
+          )}
+        </View>
         <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: theme.primary }]}
-          onPress={() => navigation.navigate("CrearRecurrente")}
+          style={[styles.addButton, { backgroundColor: limiteAlcanzado ? "#F87171" : theme.primary }]}
+          onPress={() => limiteAlcanzado ? setShowUpgrade(true) : navigation.navigate("CrearRecurrente")}
         >
-          <Ionicons name="add" size={24} color="white" />
+          <Ionicons name={limiteAlcanzado ? "lock-closed" : "add"} size={22} color="white" />
         </TouchableOpacity>
       </View>
+
+      <UpgradeModal
+        visible={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        title="Límite de recurrentes alcanzado"
+        message={`Tu plan Gratis permite hasta ${limite} transacciones recurrentes. Actualiza al plan Pro para crear recurrentes ilimitadas.`}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
