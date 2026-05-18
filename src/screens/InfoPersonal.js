@@ -24,7 +24,7 @@ export default function InfoPersonal() {
   const { isDark, toggleTheme } = useThemeContext();
   const theme = useTheme();
 
-  const [nombrePais, setNombrePais] = useState("Cargando...");
+  const [nombrePais, setNombrePais] = useState(null);
 
   // Edit profile modal state
   const [editVisible, setEditVisible] = useState(false);
@@ -90,9 +90,9 @@ export default function InfoPersonal() {
         const paisEncontrado = response?.data?.find(
           (p) => p.codigo_iso2.toUpperCase() === user.nacionalidad.toUpperCase(),
         );
-        setNombrePais(paisEncontrado ? paisEncontrado.nombre : user.nacionalidad);
+        setNombrePais(paisEncontrado ? paisEncontrado.nombre : user.nacionalidad ?? "No especificada");
       } catch {
-        setNombrePais(user.nacionalidad);
+        setNombrePais(user.nacionalidad ?? "No especificada");
       }
     };
     obtenerNombrePais();
@@ -135,7 +135,10 @@ export default function InfoPersonal() {
           <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Ionicons name="flag-outline" size={20} color={theme.primary} />
             <Text style={[styles.label, { color: theme.textSecondary }]}>Nacionalidad</Text>
-            <Text style={[styles.value, { color: theme.text }]}>{nombrePais}</Text>
+            {nombrePais === null
+              ? <View style={{ height: 20, width: 90, backgroundColor: theme.cardSecondary, borderRadius: 6, marginTop: 4 }} />
+              : <Text style={[styles.value, { color: theme.text }]}>{nombrePais}</Text>
+            }
           </View>
           <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Ionicons name="cash-outline" size={20} color={theme.primary} />

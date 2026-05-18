@@ -7,18 +7,88 @@ import { useTheme } from "../../theme/useTheme";
 
 // Diccionario de manuales. Las llaves deben coincidir con lo que devuelve 'formatTitle'
 const MANUAL_CONTENT = {
-  Home: "Aquí verás un resumen rápido de tu dinero. Comienza revisando tus saldos totales.",
+  // ── Inicio ──────────────────────────────────────────────────────────────
+  Home: "Aquí ves un resumen rápido de tus finanzas: saldo total, ingresos, gastos del mes y tus últimos movimientos. Usa el botón ⚡ para registrar un movimiento rápidamente.",
+
+  // ── Cuentas ─────────────────────────────────────────────────────────────
   Cuentas:
-    "Crea cuentas (Efectivo, Banco, etc.). Debes tener al menos una para registrar movimientos.",
+    "Aquí están todas tus cuentas (Efectivo, Banco, Ahorros, etc.). Debes tener al menos una para registrar movimientos. Toca una cuenta para ver su detalle y movimientos.",
+  "Crear Cuenta":
+    "Agrega una nueva cuenta. Elige el tipo (Banco, Efectivo, etc.), asígnale un nombre, moneda y color para identificarla fácilmente.",
+  "Detalle Cuenta":
+    "Ve el saldo actual y el historial de movimientos de esta cuenta. Puedes editarla o archivarla si ya no la usas activamente.",
+
+  // ── Categorías ──────────────────────────────────────────────────────────
   Categorias:
-    "Crea carpetas/etiquetas para clasificar en qué gastas o cómo ganas tu dinero.",
+    "Las categorías te ayudan a clasificar en qué gastas o cómo ganas tu dinero. Crea categorías personalizadas con nombre, tipo (gasto/ingreso) y color.",
+  "Crear Categoria":
+    "Crea una nueva categoría. Asígnale un nombre descriptivo, selecciona si es de gasto o ingreso, y elige un color e ícono para reconocerla rápidamente.",
+  "Detalle Categoria":
+    "Ve todos los movimientos asociados a esta categoría. Puedes editar su nombre, color o ícono en cualquier momento.",
+
+  // ── Movimientos ─────────────────────────────────────────────────────────
   Movimientos:
-    "Aquí registras tu actividad: Ingresos (dinero que entra), Gastos (dinero que sale) y Transferencias (pasar dinero de una cuenta tuya a otra).",
+    "Registra toda tu actividad financiera: Gastos (dinero que sale), Ingresos (dinero que entra) y Transferencias (mover dinero entre tus propias cuentas). Usa los filtros para buscar movimientos específicos.",
+  "Crear Movimiento":
+    "Completa el formulario para registrar un nuevo movimiento. Selecciona el tipo, ingresa el monto, elige la categoría y la cuenta correspondiente.",
+  "Detalle Movimiento":
+    "Ve la información completa de este movimiento: monto, categoría, cuenta, fecha y descripción. Puedes editarlo o eliminarlo si fue un error.",
+
+  // ── Presupuestos ────────────────────────────────────────────────────────
+  Presupuestos:
+    "Define cuánto puedes gastar por categoría en un periodo de tiempo. A medida que registras gastos verás cuánto del presupuesto has consumido y cuánto te queda.",
+  "Crear Presupuesto":
+    "Crea un nuevo presupuesto. Selecciona la categoría, define el monto límite y el periodo (semanal, mensual, etc.) que quieres controlar.",
+
+  // ── Recurrentes ─────────────────────────────────────────────────────────
+  Recurrentes:
+    "Automatiza movimientos que se repiten periódicamente: salario, suscripciones, pagos de servicios, etc. El sistema los registrará automáticamente según la frecuencia configurada.",
+  "Crear Recurrente":
+    "Configura un movimiento automático. Define el monto, tipo, categoría, cuenta y con qué frecuencia se debe repetir (diario, semanal, mensual).",
+
+  // ── Metas ───────────────────────────────────────────────────────────────
   Metas:
-    "Define objetivos de ahorro a corto o largo plazo y asigna dinero a ellos.",
-  Deudas: "Registra dinero que debes o que te deben para no perder el rastro.",
-  Estadísticas: "Revisa gráficos detallados de tu comportamiento financiero.",
-  Perfil: "Administra tu información personal y ajustes de la cuenta.",
+    "Define objetivos de ahorro (vacaciones, fondo de emergencia, equipo nuevo, etc.) y asigna dinero hacia ellos de forma progresiva. Función exclusiva del plan Premium.",
+  "Crear Meta":
+    "Crea un nuevo objetivo de ahorro. Ponle un nombre, define el monto total que quieres alcanzar y establece una fecha límite opcional.",
+  "Editar Meta":
+    "Modifica los datos de tu meta: nombre, monto objetivo o fecha límite.",
+  "Detalle Meta":
+    "Ve el progreso de tu meta: cuánto llevas ahorrado, cuánto te falta y el historial de aportes realizados.",
+  "Añadir Ahorro":
+    "Registra un aporte hacia esta meta. Selecciona la cuenta de donde sale el dinero e ingresa el monto que deseas destinar.",
+  "Historial Aportes":
+    "Revisa todos los aportes realizados a esta meta a lo largo del tiempo, con fecha y monto de cada uno.",
+
+  // ── Deudas ──────────────────────────────────────────────────────────────
+  Deudas:
+    "Lleva el control de deudas que tienes pendientes (debes dinero) o que otros tienen contigo (te deben). Registra abonos y mantén el historial de pagos. Función exclusiva del plan Premium.",
+  "Crear Deuda":
+    "Registra una nueva deuda. Indica si tú debes o te deben, el monto total, la persona involucrada y la fecha límite de pago.",
+  "Editar Deuda":
+    "Modifica los datos de esta deuda: monto, persona responsable, fecha límite o descripción.",
+  "Detalle Deuda":
+    "Ve el estado actual de la deuda: monto original, total pagado hasta ahora y saldo pendiente.",
+  "Añadir Pago Deuda":
+    "Registra un abono a esta deuda. Indica el monto del pago y la fecha en que se realizó.",
+  "Historial Pagos Deuda":
+    "Revisa todos los pagos que se han realizado a esta deuda, con fecha y monto de cada abono.",
+
+  // ── Estadísticas ────────────────────────────────────────────────────────
+  "Estadísticas":
+    "Analiza tu comportamiento financiero con gráficos detallados: distribución de gastos por categoría, evolución mensual de ingresos y gastos, y comparativas de periodos. Función exclusiva del plan Premium.",
+
+  // ── Perfil ──────────────────────────────────────────────────────────────
+  Perfil:
+    "Administra tu información personal: nombre, correo y contraseña. Aquí también puedes ver tu plan actual, cambiar el tema visual de la app (claro/oscuro) y cerrar sesión.",
+
+  // ── Admin ───────────────────────────────────────────────────────────────
+  Admin:
+    "Panel de administración del sistema. Solo accesible para administradores. Aquí puedes gestionar usuarios, planes y configuraciones globales de la plataforma.",
+
+  // ── Planes ──────────────────────────────────────────────────────────────
+  Planes:
+    "Conoce los planes disponibles de MOVA. El plan Premium desbloquea funciones avanzadas como Metas de ahorro, control de Deudas y Estadísticas detalladas.",
 };
 
 export default function Header() {
@@ -49,8 +119,9 @@ export default function Header() {
 
   const formatTitle = (name) => {
     if (name === "CuentasHome") return "Cuentas";
-    if (name === "CategoriasHome") return "Categorias"; // Por si tienes algo similar
+    if (name === "CategoriasHome") return "Categorias";
     if (name === "MovimientosHome") return "Movimientos";
+    if (name === "DeudasHome") return "Deudas";
 
     return name
       .replace(/([A-Z])/g, " $1")
