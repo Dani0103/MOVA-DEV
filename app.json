@@ -23,7 +23,7 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.svg",
+      "favicon": "./assets/favicon.png",
       "name": "MOVA",
       "shortName": "MOVA",
       "description": "Gestiona tus finanzas personales"
