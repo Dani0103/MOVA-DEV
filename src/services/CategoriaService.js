@@ -46,11 +46,24 @@ export async function updateCategory(id, data, token) {
 }
 
 export async function deleteCategory(id, token) {
+  // Backend soft-deactivates (sets activa=false) instead of hard deleting
   return await apiFetch(`/categorias/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
     },
+  });
+}
+
+export async function toggleCategoriaActiva(id, activa, token) {
+  return await apiFetch(`/categorias/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ activa }),
   });
 }

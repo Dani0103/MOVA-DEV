@@ -226,8 +226,8 @@ export default function CrearMovimientoScreen({
             );
           }
 
-          // 2. Filtramos las categorías por el tipo seleccionado
-          const categoriasPorTipo = categorias.filter((c) => c.tipo === tipo);
+          // 2. Filtramos las categorías por el tipo seleccionado (solo activas)
+          const categoriasPorTipo = categorias.filter((c) => c.tipo === tipo && c.activa !== false);
 
           // 3. Si se seleccionó tipo pero no hay categorías creadas para ese tipo
           if (categoriasPorTipo.length === 0) {

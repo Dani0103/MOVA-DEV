@@ -18,11 +18,17 @@ import { TypeMovement } from "../../services/CatalogoService";
 import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
 
+const SkeletonBox = ({ style }) => (
+  <View style={[{ backgroundColor: "#1E293B", borderRadius: 12 }, style]} />
+);
+
 export default function QuickMovementModal({
   visible,
   onClose,
   cuentas = [],
   categorias = [],
+  loadingCuentas = false,
+  loadingCategorias = false,
   onSuccess,
 }) {
   const { token } = useAuth();
@@ -246,9 +252,17 @@ export default function QuickMovementModal({
                   ))}
                 </View>
 
-                <View style={styles.gridContainer}>
+                {loadingCategorias && (
+                  <View style={styles.gridContainer}>
+                    {[...Array(6)].map((_, i) => (
+                      <SkeletonBox key={i} style={{ width: "31%", height: 64 }} />
+                    ))}
+                  </View>
+                )}
+
+                <View style={[styles.gridContainer, loadingCategorias && { display: "none" }]}>
                   {categorias
-                    .filter((c) => c.tipo === tipo)
+                    .filter((c) => c.tipo === tipo && c.activa !== false)
                     .map((cat) => (
                       <TouchableOpacity
                         key={cat.id}
@@ -280,7 +294,15 @@ export default function QuickMovementModal({
             {step === 3 && (
               <View style={styles.stepView}>
                 <Text style={styles.stepLabel}>¿De dónde sale/entra?</Text>
-                <View style={styles.accountList}>
+                {loadingCuentas && (
+                  <View style={styles.accountList}>
+                    {[...Array(3)].map((_, i) => (
+                      <SkeletonBox key={i} style={{ height: 56 }} />
+                    ))}
+                  </View>
+                )}
+
+                <View style={[styles.accountList, loadingCuentas && { display: "none" }]}>
                   {cuentas.map((acc) => (
                     <TouchableOpacity
                       key={acc.id}
@@ -371,6 +393,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     height: "85%",
+    overflow: "hidden",
   },
   modalHeader: {
     flexDirection: "row",
@@ -381,12 +404,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#1E293B",
   },
   modalTitle: { color: "white", fontSize: 18, fontWeight: "bold" },
-  scrollBody: { padding: 20 },
+  scrollBody: { padding: 20, flexGrow: 1 },
   stepIndicatorContainer: { flexDirection: "row", gap: 6 },
   stepDot: { width: 8, height: 8, borderRadius: 4 },
   stepDotActive: { backgroundColor: "#38BDF8", width: 8 },
   stepDotInactive: { backgroundColor: "#334155" },
-  stepView: { width: "100%" },
+  stepView: { flex: 1, alignSelf: "stretch" },
   stepLabel: {
     color: "#94A3B8",
     fontSize: 16,
@@ -396,15 +419,16 @@ const styles = StyleSheet.create({
   montoBigContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end", // Empuja todo a la derecha
+    justifyContent: "flex-end",
     marginTop: 10,
-    backgroundColor: "#1E293B", // Fondo sutil para el área del input
+    backgroundColor: "#1E293B",
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#334155",
-    width: "100%",
+    alignSelf: "stretch",
+    overflow: "hidden",
   },
   montoSymbol: {
     color: "#38BDF8",
@@ -414,10 +438,12 @@ const styles = StyleSheet.create({
   },
   hugeInput: {
     color: "white",
-    fontSize: 42, // Reducido un poco para que quepan cifras grandes
+    fontSize: 42,
     fontWeight: "bold",
-    textAlign: "right", // Pegado a la derecha
-    flex: 1, // Toma todo el espacio disponible
+    textAlign: "right",
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   typeToggle: {
     flexDirection: "row",

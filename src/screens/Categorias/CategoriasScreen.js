@@ -15,7 +15,18 @@ import { GetCategories } from "../../services/CategoriaService";
 import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
 import { useTheme } from "../../theme/useTheme";
 
-// Data de ejemplo (esto luego vendrá de tu API Laravel)
+/**
+ * Normaliza el nombre del icono para Ionicons:
+ * - null/undefined → fallback
+ * - "fast-food" → "fast-food-outline"   (añade -outline si no lo tiene)
+ * - "fast-food-outline" → sin cambio
+ */
+function getIconName(icono, fallback = "pricetag-outline") {
+  if (!icono) return fallback;
+  if (icono.endsWith("-outline") || icono.endsWith("-sharp")) return icono;
+  return `${icono}-outline`;
+}
+
 export default function CategoriasScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -28,9 +39,9 @@ export default function CategoriasScreen() {
     refreshCategories(token, user.id);
   }, []);
 
-  const categoriasFiltradas = categorias.filter(
-    (c) => c.tipo === tab && c.usuario_id == user?.id,
-  );
+  const todasFiltradas  = categorias.filter((c) => c.tipo === tab && c.usuario_id == user?.id);
+  const activas         = todasFiltradas.filter((c) => c.activa !== false);
+  const inactivas       = todasFiltradas.filter((c) => c.activa === false);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -81,38 +92,9 @@ export default function CategoriasScreen() {
         contentContainerStyle={{ flexGrow: 1 }}
       >
         {loading ? (
-          <ActivityIndicator
-            color={theme.primary}
-            size="large"
-            style={{ marginTop: 20 }}
-          />
-        ) : categoriasFiltradas.length > 0 ? (
-          /* Muestra el Grid si hay datos */
-          <View style={styles.grid}>
-            {categoriasFiltradas.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.categoryCard, { backgroundColor: theme.card }]}
-                onPress={() =>
-                  navigation.navigate("DetalleCategoria", { categoria: cat })
-                }
-              >
-                <View
-                  style={[
-                    styles.iconCircle,
-                    { backgroundColor: cat.color_hex + "20" },
-                  ]}
-                >
-                  <Ionicons name={cat.icono} size={24} color={cat.color_hex} />
-                </View>
-                <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
-                  {cat.nombre}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          /* Muestra esta vista si NO hay datos */
+          <ActivityIndicator color={theme.primary} size="large" style={{ marginTop: 20 }} />
+        ) : todasFiltradas.length === 0 ? (
+          /* Estado vacío */
           <View style={styles.emptyContainer}>
             <View style={[styles.emptyIconCircle, { backgroundColor: theme.card }]}>
               <Ionicons name="folder-open-outline" size={60} color="#475569" />
@@ -130,6 +112,60 @@ export default function CategoriasScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+        ) : (
+          <>
+            {/* Categorías activas */}
+            <View style={styles.grid}>
+              {activas.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[styles.categoryCard, { backgroundColor: theme.card }]}
+                  onPress={() => navigation.navigate("DetalleCategoria", { categoria: cat })}
+                >
+                  <View style={[styles.iconCircle, { backgroundColor: cat.color_hex + "20" }]}>
+                    <Ionicons name={getIconName(cat.icono)} size={24} color={cat.color_hex} />
+                  </View>
+                  <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
+                    {cat.nombre}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Categorías inactivas */}
+            {inactivas.length > 0 && (
+              <>
+                <View style={styles.inactiveDivider}>
+                  <View style={[styles.inactiveLine, { backgroundColor: theme.border }]} />
+                  <Text style={[styles.inactiveLabel, { color: theme.textMuted }]}>
+                    Desactivadas ({inactivas.length})
+                  </Text>
+                  <View style={[styles.inactiveLine, { backgroundColor: theme.border }]} />
+                </View>
+
+                <View style={styles.grid}>
+                  {inactivas.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[styles.categoryCard, styles.categoryCardInactive, { backgroundColor: theme.card }]}
+                      onPress={() => navigation.navigate("DetalleCategoria", { categoria: cat })}
+                    >
+                      {/* Overlay badge */}
+                      <View style={styles.inactiveBadge}>
+                        <Ionicons name="pause-circle" size={14} color="#FB923C" />
+                      </View>
+                      <View style={[styles.iconCircle, { backgroundColor: cat.color_hex + "10" }]}>
+                        <Ionicons name={cat.icono} size={24} color={cat.color_hex + "80"} />
+                      </View>
+                      <Text style={[styles.categoryName, { color: theme.textMuted }]} numberOfLines={1}>
+                        {cat.nombre}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -200,6 +236,30 @@ const styles = StyleSheet.create({
   categoryName: {
     fontWeight: "600",
     fontSize: 14,
+  },
+  categoryCardInactive: {
+    opacity: 0.6,
+  },
+  inactiveBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+  },
+  inactiveDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginVertical: 16,
+  },
+  inactiveLine: {
+    flex: 1,
+    height: 1,
+  },
+  inactiveLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   dotsBtn: {
     position: "absolute",

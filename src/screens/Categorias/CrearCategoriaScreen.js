@@ -48,6 +48,12 @@ const ICONOS_DISPONIBLES = [
   "cash",
 ];
 
+function getIconName(icono, fallback = "pricetag-outline") {
+  if (!icono) return fallback;
+  if (icono.endsWith("-outline") || icono.endsWith("-sharp")) return icono;
+  return `${icono}-outline`;
+}
+
 export default function CrearCategoriaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -115,7 +121,7 @@ export default function CrearCategoriaScreen() {
         <View
           style={[styles.iconCircle, { backgroundColor: colorSelected + "20" }]}
         >
-          <Ionicons name={iconSelected} size={40} color={colorSelected} />
+          <Ionicons name={getIconName(iconSelected)} size={40} color={colorSelected} />
         </View>
         <Text style={[styles.previewText, { color: theme.text }]}>{nombre || "Nombre categoría"}</Text>
       </View>
@@ -174,7 +180,7 @@ export default function CrearCategoriaScreen() {
             ]}
           >
             <Ionicons
-              name={icon}
+              name={getIconName(icon)}
               size={24}
               color={iconSelected === icon ? colorSelected : theme.textMuted}
             />

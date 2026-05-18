@@ -15,11 +15,20 @@ import { useCategories } from "../context/CategoryContext";
 import { useAccounts } from "../context/AccountContext";
 import { useTheme } from "../theme/useTheme";
 import { useThemeContext } from "../context/ThemeContext";
+import { useNavigation } from "@react-navigation/native";
+
+const TIPO_ICONS = {
+  gasto:        "trending-down-outline",
+  ingreso:      "trending-up-outline",
+  transferencia:"swap-horizontal-outline",
+  prestamo:     "cash-outline",
+};
 
 export default function HomeScreen() {
   const theme = useTheme();
   const { isDark } = useThemeContext();
   const { user, token } = useAuth();
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     saldoDisponible: 0,
@@ -29,8 +38,8 @@ export default function HomeScreen() {
     movimientos: [],
   });
 
-  const { categorias, refreshCategories } = useCategories();
-  const { cuentas, refreshAccounts } = useAccounts();
+  const { categorias, loading: loadingCategorias, refreshCategories } = useCategories();
+  const { cuentas, loading: loadingCuentas, refreshAccounts } = useAccounts();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -129,57 +138,71 @@ export default function HomeScreen() {
           </View>
 
           {data.movimientos.length > 0 ? (
-            data.movimientos.map((item) => (
-              <View key={item.id} style={[styles.transactionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                {/* Lado Izquierdo: Icono o Inicial con el color de la cuenta */}
-                <View
-                  style={[
-                    styles.iconCircle,
-                    {
-                      backgroundColor:
-                        item.cuenta_origen?.color_hex || theme.primary,
-                    },
-                  ]}
+            data.movimientos.map((item) => {
+              const catColor  = item.categoria?.color_hex ?? item.cuenta_origen?.color_hex ?? theme.primary;
+              const iconName  = item.categoria?.icono
+                ? `${item.categoria.icono}-outline`
+                : TIPO_ICONS[item.tipo] ?? "swap-horizontal-outline";
+              const isIngreso = item.tipo === "ingreso";
+              const amountColor = isIngreso ? "#4ADE80" : "#F87171";
+
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[styles.transactionCard, { backgroundColor: theme.card }]}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate("Movimientos", {
+                    screen: "DetalleMovimiento",
+                    params: { movimiento: item },
+                  })}
                 >
-                  <Text style={styles.iconLetter}>
-                    {item.categoria.nombre.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
+                  {/* Icono con color de categoría */}
+                  <View style={[styles.iconCircle, { backgroundColor: catColor + "22" }]}>
+                    <Ionicons name={iconName} size={20} color={catColor} />
+                  </View>
 
-                {/* Centro: Info del movimiento */}
-                <View style={styles.transactionInfo}>
-                  <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
-                    {item.categoria.nombre}
-                  </Text>
-                  <Text style={[styles.detailsText, { color: theme.textSecondary }]}>
-                    {item.cuenta_origen?.nombre} •{" "}
-                    {new Date(item.fecha).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "short",
-                    })}
-                  </Text>
-                </View>
+                  {/* Info central */}
+                  <View style={styles.transactionInfo}>
+                    <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
+                      {item.categoria?.nombre ?? item.tipo}
+                    </Text>
 
-                {/* Derecha: Monto */}
-                <View style={styles.amountContainer}>
-                  <Text
-                    style={[
-                      styles.amountText,
-                      item.tipo === "ingreso"
-                        ? styles.incomeText
-                        : styles.expenseText,
-                    ]}
-                  >
-                    {item.tipo === "ingreso" ? "+" : "-"} $
-                    {Math.abs(parseFloat(item.monto)).toLocaleString("es-CO", {
-                      minimumFractionDigits: 0,
-                    })}
-                  </Text>
-                </View>
-              </View>
-            ))
+                    {/* Descripción — línea nueva */}
+                    {!!item.descripcion && (
+                      <Text style={[styles.descriptionText, { color: theme.textSecondary }]} numberOfLines={1}>
+                        {item.descripcion}
+                      </Text>
+                    )}
+
+                    <Text style={[styles.detailsText, { color: theme.textMuted }]}>
+                      {item.cuenta_origen?.nombre ?? "—"} •{" "}
+                      {new Date(item.fecha).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </Text>
+                  </View>
+
+                  {/* Monto */}
+                  <View style={styles.amountContainer}>
+                    <Text style={[styles.amountText, { color: amountColor }]}>
+                      {isIngreso ? "+" : "-"}$
+                      {Math.abs(parseFloat(item.monto)).toLocaleString("es-CO", {
+                        minimumFractionDigits: 0,
+                      })}
+                    </Text>
+                    {item.cuenta_origen?.moneda?.codigo ? (
+                      <Text style={[styles.currencyCode, { color: theme.textMuted }]}>
+                        {item.cuenta_origen.moneda.codigo}
+                      </Text>
+                    ) : null}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           ) : (
             <View style={styles.emptyContainer}>
+              <Ionicons name="receipt-outline" size={40} color={theme.border} style={{ marginBottom: 8 }} />
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                 No hay movimientos registrados
               </Text>
@@ -191,9 +214,11 @@ export default function HomeScreen() {
       <QuickMovementModal
         visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
-        cuentas={cuentas} // Pasa las cuentas que ya tienes
-        categorias={categorias} // Pasa las categorías que ya tienes
-        onSuccess={fetchData} // La función que recarga el dashboard
+        cuentas={cuentas}
+        categorias={categorias}
+        loadingCuentas={loadingCuentas}
+        loadingCategorias={loadingCategorias}
+        onSuccess={fetchData}
       />
 
       <TouchableOpacity
@@ -298,10 +323,9 @@ const styles = StyleSheet.create({
   transactionCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
+    padding: 14,
     borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
+    marginBottom: 10,
   },
   iconCircle: {
     width: 44,
@@ -310,35 +334,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  iconLetter: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
   transactionInfo: {
     flex: 1,
     marginLeft: 12,
+    gap: 2,
   },
   categoryName: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  descriptionText: {
+    fontSize: 12,
+    fontStyle: "italic",
   },
   detailsText: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
   },
   amountContainer: {
     alignItems: "flex-end",
+    gap: 2,
   },
   amountText: {
     fontSize: 15,
     fontWeight: "700",
   },
-  incomeText: {
-    color: "#4ADE80",
-  },
-  expenseText: {
-    color: "#F87171",
+  currencyCode: {
+    fontSize: 10,
+    fontWeight: "600",
   },
   emptyContainer: {
     padding: 40,
@@ -346,6 +369,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+    marginTop: 4,
   },
 
   fab: {
