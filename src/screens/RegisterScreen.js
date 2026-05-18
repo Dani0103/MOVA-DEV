@@ -18,8 +18,10 @@ import { parseError } from "../utils/parseError";
 
 import FormInput from "../components/form/FormInput";
 import FormSelect from "../components/form/FormSelect";
+import { useTheme } from "../theme/useTheme";
 
 export default function RegisterScreen({ navigation }) {
+  const theme = useTheme();
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
@@ -111,42 +113,42 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.headerSection}>
-        <Text style={styles.title}>Crea tu cuenta</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.text }]}>Crea tu cuenta</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Comienza a organizar tus finanzas hoy
         </Text>
       </View>
 
       <View style={styles.formSection}>
-        <Text style={styles.label}>Nombre/s *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Nombre/s *</Text>
         <FormInput
           value={nombre}
           onChangeText={setNombre}
           placeholder="Tu nombre"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
         />
 
-        <Text style={styles.label}>Apellido/s *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Apellido/s *</Text>
         <FormInput
           value={apellido}
           onChangeText={setApellido}
           placeholder="Tu apellido"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
         />
 
-        <Text style={styles.label}>Correo electrónico *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Correo electrónico *</Text>
         <FormInput
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
           placeholder="ejemplo@correo.com"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
         />
 
         {/* <Text style={styles.label}>Nacionalidad *</Text>
@@ -154,10 +156,10 @@ export default function RegisterScreen({ navigation }) {
           value={nacionalidad}
           onChangeText={setNacionalidad}
           placeholder="Ej: Colombiano"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
         /> */}
 
-        <Text style={styles.label}>Nacionalidad *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Nacionalidad *</Text>
         <FormSelect
           value={nacionalidad}
           onValueChange={setNacionalidad}
@@ -166,7 +168,7 @@ export default function RegisterScreen({ navigation }) {
           placeholder="Selecciona un pais"
         />
 
-        <Text style={styles.label}>Moneda preferida *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Moneda preferida *</Text>
         <FormSelect
           value={moneda}
           onValueChange={setMoneda}
@@ -175,37 +177,37 @@ export default function RegisterScreen({ navigation }) {
           placeholder="Selecciona una moneda"
         />
 
-        <Text style={styles.label}>Contraseña *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Contraseña *</Text>
         <FormInput
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
           placeholder="********"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
           rightIcon={showPassword ? "eye-off" : "eye"}
           onRightIconPress={() => setShowPassword((prev) => !prev)}
         />
 
-        <Text style={styles.label}>Confirmar contraseña *</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Confirmar contraseña *</Text>
         <FormInput
           value={confirmedPassword}
           onChangeText={setConfirmedPassword}
           secureTextEntry={!showConfirmPassword}
           placeholder="********"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
           rightIcon={showConfirmPassword ? "eye-off" : "eye"}
           onRightIconPress={() => setShowConfirmPassword((prev) => !prev)}
         />
 
         <TouchableOpacity
-          style={[styles.mainButton, submitting && { opacity: 0.7 }]}
+          style={[styles.mainButton, { backgroundColor: theme.primary }, submitting && { opacity: 0.7 }]}
           onPress={handleRegister}
           disabled={submitting}
         >
           {submitting ? (
-            <ActivityIndicator color="#0F172A" />
+            <ActivityIndicator color={theme.background} />
           ) : (
-            <Text style={styles.buttonText}>Registrarse</Text>
+            <Text style={[styles.buttonText, { color: theme.background }]}>Registrarse</Text>
           )}
         </TouchableOpacity>
 
@@ -213,9 +215,9 @@ export default function RegisterScreen({ navigation }) {
           onPress={() => navigation.navigate("Login")}
           style={styles.linkContainer}
         >
-          <Text style={styles.linkText}>
+          <Text style={[styles.linkText, { color: theme.textSecondary }]}>
             ¿Ya tienes cuenta?{" "}
-            <Text style={styles.linkHighlight}>Inicia sesión</Text>
+            <Text style={[styles.linkHighlight, { color: theme.primary }]}>Inicia sesión</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -226,7 +228,6 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
   },
   scrollContent: {
     padding: 24,
@@ -238,19 +239,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    color: "white",
     fontWeight: "bold",
   },
   subtitle: {
     fontSize: 15,
-    color: "#94A3B8",
     marginTop: 6,
   },
   formSection: {
     width: "100%",
   },
   label: {
-    color: "#94A3B8",
     marginBottom: 8,
     marginTop: 12,
     fontSize: 13,
@@ -259,19 +257,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   mainButton: {
-    backgroundColor: "#38BDF8",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 30,
-    shadowColor: "#38BDF8",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
   },
   buttonText: {
-    color: "#0F172A",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -280,11 +275,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   linkText: {
-    color: "#94A3B8",
     fontSize: 14,
   },
   linkHighlight: {
-    color: "#38BDF8",
     fontWeight: "bold",
   },
 });

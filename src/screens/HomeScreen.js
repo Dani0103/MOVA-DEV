@@ -13,8 +13,12 @@ import QuickMovementModal from "./Movimientos/QuickMovementModal";
 import { Ionicons } from "@expo/vector-icons";
 import { useCategories } from "../context/CategoryContext";
 import { useAccounts } from "../context/AccountContext";
+import { useTheme } from "../theme/useTheme";
+import { useThemeContext } from "../context/ThemeContext";
 
 export default function HomeScreen() {
+  const theme = useTheme();
+  const { isDark } = useThemeContext();
   const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
@@ -70,43 +74,43 @@ export default function HomeScreen() {
       <View
         style={[
           styles.container,
-          { justifyContent: "center", alignItems: "center" },
+          { backgroundColor: theme.background, justifyContent: "center", alignItems: "center" },
         ]}
       >
-        <ActivityIndicator size="large" color="#38BDF8" />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Saldo con validación de número */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Saldo Disponible</Text>
-          <Text style={styles.balanceAmount}>
+        <View style={[styles.balanceCard, { backgroundColor: theme.card }]}>
+          <Text style={[styles.balanceLabel, { color: theme.textSecondary }]}>Saldo Disponible</Text>
+          <Text style={[styles.balanceAmount, { color: theme.primary }]}>
             $ {(data.saldoDisponible || 0).toLocaleString()}
           </Text>
         </View>
 
         <View style={styles.summaryRow}>
-          <View style={styles.incomeCard}>
-            <Text style={styles.cardTitle}>Ingresos</Text>
-            <Text style={styles.income}>
+          <View style={[styles.incomeCard, { backgroundColor: isDark ? "#064E3B" : "#F0FDF4" }]}>
+            <Text style={[styles.cardTitle, { color: isDark ? "white" : "#166534" }]}>Ingresos</Text>
+            <Text style={[styles.income, { color: isDark ? "#4ADE80" : "#16A34A" }]}>
               +$ {(data.ingresos || 0).toLocaleString()}
             </Text>
           </View>
 
-          <View style={styles.expenseCard}>
-            <Text style={styles.cardTitle}>Gastos</Text>
-            <Text style={styles.expense}>
+          <View style={[styles.expenseCard, { backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2" }]}>
+            <Text style={[styles.cardTitle, { color: isDark ? "white" : "#991B1B" }]}>Gastos</Text>
+            <Text style={[styles.expense, { color: isDark ? "#F87171" : "#DC2626" }]}>
               -$ {(data.gastos || 0).toLocaleString()}
             </Text>
           </View>
         </View>
 
-        <View style={styles.savingsCard}>
-          <Text style={styles.cardTitle}>Ahorro del Mes</Text>
+        <View style={[styles.savingsCard, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Ahorro del Mes</Text>
           <Text
             style={[
               styles.savingsAmount,
@@ -120,20 +124,20 @@ export default function HomeScreen() {
         {/* Sección de movimientos con validación de lista vacía */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Últimos Movimientos</Text>
             {/* <Text style={styles.seeAll}>Ver todos</Text> */}
           </View>
 
           {data.movimientos.length > 0 ? (
             data.movimientos.map((item) => (
-              <View key={item.id} style={styles.transactionCard}>
+              <View key={item.id} style={[styles.transactionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {/* Lado Izquierdo: Icono o Inicial con el color de la cuenta */}
                 <View
                   style={[
                     styles.iconCircle,
                     {
                       backgroundColor:
-                        item.cuenta_origen?.color_hex || "#334155",
+                        item.cuenta_origen?.color_hex || theme.primary,
                     },
                   ]}
                 >
@@ -144,10 +148,10 @@ export default function HomeScreen() {
 
                 {/* Centro: Info del movimiento */}
                 <View style={styles.transactionInfo}>
-                  <Text style={styles.categoryName} numberOfLines={1}>
+                  <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
                     {item.categoria.nombre}
                   </Text>
-                  <Text style={styles.detailsText}>
+                  <Text style={[styles.detailsText, { color: theme.textSecondary }]}>
                     {item.cuenta_origen?.nombre} •{" "}
                     {new Date(item.fecha).toLocaleDateString("es-ES", {
                       day: "2-digit",
@@ -176,7 +180,7 @@ export default function HomeScreen() {
             ))
           ) : (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                 No hay movimientos registrados
               </Text>
             </View>
@@ -193,7 +197,7 @@ export default function HomeScreen() {
       />
 
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: theme.primary }]}
         onPress={() => setIsModalVisible(true)}
       >
         <Ionicons name="flash" size={24} color="black" />
@@ -205,28 +209,22 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
     padding: 20,
   },
   welcome: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "white",
     marginBottom: 20,
   },
   balanceCard: {
-    backgroundColor: "#1E293B",
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
   },
-  balanceLabel: {
-    color: "#94A3B8",
-  },
+  balanceLabel: {},
   balanceAmount: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#38BDF8",
     marginTop: 8,
   },
   summaryRow: {
@@ -263,23 +261,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   sectionTitle: {
-    color: "white",
     fontSize: 18,
     marginBottom: 10,
   },
   transaction: {
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  transactionText: {
-    color: "white",
-  },
+  transactionText: {},
   savingsCard: {
-    backgroundColor: "#1E293B",
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
@@ -305,12 +298,10 @@ const styles = StyleSheet.create({
   transactionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E293B", // Color de tarjeta que ya usas
     padding: 12,
     borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)", // Borde muy sutil
   },
   iconCircle: {
     width: 44,
@@ -329,12 +320,10 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   categoryName: {
-    color: "white",
     fontSize: 16,
     fontWeight: "600",
   },
   detailsText: {
-    color: "#94A3B8",
     fontSize: 12,
     marginTop: 2,
   },
@@ -356,7 +345,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: {
-    color: "#94A3B8",
     fontSize: 14,
   },
 
@@ -364,14 +352,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 30, // Distancia desde abajo
     right: 25, // Distancia desde la derecha
-    backgroundColor: "#38BDF8", // El color celeste que venimos usando
     width: 60,
     height: 60,
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
     // Sombra para iOS
-    shadowColor: "#38BDF8",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 5,

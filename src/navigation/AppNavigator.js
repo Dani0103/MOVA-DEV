@@ -9,8 +9,9 @@ import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import AppLayout from "../components/layout/AppLayout";
-import PlanesScreen from "../screens/PlanesScreen"; // 🔹 IMPORTA PLANES AQUÍ
+import PlanesScreen from "../screens/PlanesScreen";
 import { navigationRef } from "./RootNavigation";
+import linking from "./linking";
 
 const Stack = createNativeStackNavigator();
 
@@ -62,7 +63,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           // 🔴 ESTADO 1: Usuario NO logueado

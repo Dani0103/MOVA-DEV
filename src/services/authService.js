@@ -51,3 +51,11 @@ export async function Paises() {
     method: "GET",
   });
 }
+
+export async function updateProfile(token, data) {
+  return await apiFetch("/auth/me", {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}

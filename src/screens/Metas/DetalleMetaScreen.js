@@ -5,46 +5,136 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useState, useCallback } from "react";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../theme/useTheme";
+import { useAuth } from "../../context/AuthContext";
+import { loadMetas, deleteMeta } from "../../services/MetasService";
+import { universalAlert } from "../../utils/universalAlert";
 
 const { width } = Dimensions.get("window");
 
 export default function DetalleMetaScreen() {
+  const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
+  const { token } = useAuth();
 
-  // Recibimos la meta por parámetros (si no viene, usamos un mock para desarrollo)
-  const { meta } = route.params || {
-    meta: {
-      id: 1,
-      nombre: "Fondo de Emergencia",
-      objetivo: 5000000,
-      actual: 2850000,
-      color: "#38BDF8",
-      icono: "shield-checkmark",
-      fecha_limite: "2026-12-31",
-    },
+  // Seed with what we received so the screen renders immediately
+  const { meta: initialMeta } = route.params || { meta: null };
+  const [meta, setMeta] = useState(initialMeta);
+  const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleEliminar = () => {
+    universalAlert(
+      "Eliminar Meta",
+      `¿Estás seguro de que quieres eliminar "${meta.nombre}"? Esta acción no se puede deshacer.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await deleteMeta(token, meta.id);
+              navigation.goBack();
+            } catch (e) {
+              universalAlert("Error", e.message || "No se pudo eliminar la meta.");
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
+  // Reload the meta every time this screen gets focus (e.g. back from AddAhorro)
+  useFocusEffect(
+    useCallback(() => {
+      if (!initialMeta?.id) return;
+      let active = true;
+      (async () => {
+        try {
+          setLoading(true);
+          const todas = await loadMetas(token);
+          const fresca = todas.find((m) => m.id === initialMeta.id);
+          if (active && fresca) setMeta(fresca);
+        } catch (_) {
+          // Keep showing stale data if refresh fails
+        } finally {
+          if (active) setLoading(false);
+        }
+      })();
+      return () => { active = false; };
+    }, [token, initialMeta?.id])
+  );
+
+  if (!meta) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+
   const progreso = (meta.actual / meta.objetivo) * 100;
-  const faltante = meta.objetivo - meta.actual;
+  const faltante = Math.max(meta.objetivo - meta.actual, 0);
+
+  // ── Dynamic tip ──────────────────────────────────────────────────────────────
+  let tipText = null;
+  if (faltante <= 0) {
+    tipText = "¡Felicitaciones! Has alcanzado tu meta 🎉 Considera crear una nueva.";
+  } else if (meta.fecha_limite) {
+    const hoy = new Date();
+    const limite = new Date(meta.fecha_limite);
+    const diffMs = limite - hoy;
+    const mesesRestantes = Math.max(Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.44)), 1);
+    const ahorroPorMes = Math.ceil(faltante / mesesRestantes);
+    tipText = `Si ahorras $ ${ahorroPorMes.toLocaleString("es-CO")} cada mes, alcanzarás tu meta en ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}.`;
+  } else {
+    const ahorroPorMes = Math.ceil(faltante / 12);
+    tipText = `Si ahorras $ ${ahorroPorMes.toLocaleString("es-CO")} cada mes, alcanzarás tu meta en 12 meses.`;
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: theme.card }]}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Progreso de Meta</Text>
-        {/* <TouchableOpacity style={styles.editBtn}>
-          <Ionicons name="options-outline" size={20} color="#38BDF8" />
-        </TouchableOpacity> */}
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Progreso de Meta</Text>
+        <View style={styles.headerActions}>
+          {loading || deleting
+            ? <ActivityIndicator size="small" color={theme.primary} />
+            : (
+              <>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("EditarMeta", { meta })}
+                  style={[styles.iconBtn, { backgroundColor: theme.card }]}
+                >
+                  <Ionicons name="pencil-outline" size={18} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleEliminar}
+                  style={[styles.iconBtn, { backgroundColor: theme.card }]}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#F87171" />
+                </TouchableOpacity>
+              </>
+            )
+          }
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -58,15 +148,15 @@ export default function DetalleMetaScreen() {
           >
             <Ionicons name={meta.icono} size={50} color={meta.color} />
           </View>
-          <Text style={styles.metaTitle}>{meta.nombre}</Text>
-          <Text style={styles.metaSubtitle}>
+          <Text style={[styles.metaTitle, { color: theme.text }]}>{meta.nombre}</Text>
+          <Text style={[styles.metaSubtitle, { color: theme.textSecondary }]}>
             Objetivo: $ {meta.objetivo.toLocaleString()}
           </Text>
         </View>
 
         {/* Visual de Progreso Circular o Barra Grande */}
-        <View style={styles.progressSection}>
-          <View style={styles.progressBarBg}>
+        <View style={[styles.progressSection, { backgroundColor: theme.card }]}>
+          <View style={[styles.progressBarBg, { backgroundColor: theme.cardSecondary }]}>
             <View
               style={[
                 styles.progressBarFill,
@@ -78,8 +168,8 @@ export default function DetalleMetaScreen() {
             />
           </View>
           <View style={styles.progressLabels}>
-            <Text style={styles.percentageText}>{progreso.toFixed(1)}%</Text>
-            <Text style={styles.remainingText}>
+            <Text style={[styles.percentageText, { color: theme.text }]}>{progreso.toFixed(1)}%</Text>
+            <Text style={[styles.remainingText, { color: theme.textSecondary }]}>
               Faltan $ {faltante.toLocaleString()}
             </Text>
           </View>
@@ -87,15 +177,15 @@ export default function DetalleMetaScreen() {
 
         {/* Resumen de Datos */}
         <View style={styles.statsGrid}>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Ahorrado</Text>
+          <View style={[styles.statBox, { backgroundColor: theme.card }]}>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Ahorrado</Text>
             <Text style={[styles.statValue, { color: meta.color }]}>
               $ {meta.actual.toLocaleString()}
             </Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Fecha Meta</Text>
-            <Text style={styles.statValue}>
+          <View style={[styles.statBox, { backgroundColor: theme.card }]}>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Fecha Meta</Text>
+            <Text style={[styles.statValue, { color: theme.text }]}>
               {meta.fecha_limite || "Sin fecha"}
             </Text>
           </View>
@@ -107,24 +197,27 @@ export default function DetalleMetaScreen() {
             style={[styles.primaryAction, { backgroundColor: meta.color }]}
             onPress={() => navigation.navigate("AñadirAhorro", { meta })}
           >
-            <Ionicons name="add-circle" size={22} color="#0F172A" />
-            <Text style={styles.primaryActionText}>Añadir Ahorro</Text>
+            <Ionicons name="add-circle" size={22} color={theme.background} />
+            <Text style={[styles.primaryActionText, { color: theme.background }]}>Añadir Ahorro</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryAction}>
-            <Text style={styles.secondaryActionText}>Historial de aportes</Text>
+          <TouchableOpacity
+            style={styles.secondaryAction}
+            onPress={() => navigation.navigate("HistorialAportes", { meta })}
+          >
+            <Text style={[styles.secondaryActionText, { color: theme.primary }]}>Historial de aportes</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Tips automáticos */}
+        {/* Tip dinámico */}
         <View style={styles.tipCard}>
-          <Ionicons name="bulb-outline" size={20} color="#FACC15" />
-          <Text style={styles.tipText}>
-            Si ahorras{" "}
-            <Text style={{ fontWeight: "bold", color: "white" }}>
-              $ 250,000
-            </Text>{" "}
-            cada mes, alcanzarás tu meta en 9 meses.
+          <Ionicons
+            name={faltante <= 0 ? "checkmark-circle-outline" : "bulb-outline"}
+            size={20}
+            color={faltante <= 0 ? "#4ADE80" : "#FACC15"}
+          />
+          <Text style={[styles.tipText, { color: theme.textSecondary }]}>
+            {tipText}
           </Text>
         </View>
       </ScrollView>
@@ -135,7 +228,6 @@ export default function DetalleMetaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
     paddingHorizontal: 20,
   },
   header: {
@@ -145,18 +237,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 20,
   },
-  backBtn: {
-    padding: 8,
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-  },
-  editBtn: {
-    padding: 8,
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-  },
+  backBtn: { padding: 8, borderRadius: 12 },
+  headerActions: { flexDirection: "row", gap: 8 },
+  iconBtn: { padding: 8, borderRadius: 12 },
   headerTitle: {
-    color: "white",
     fontSize: 17,
     fontWeight: "600",
   },
@@ -173,24 +257,20 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   metaTitle: {
-    color: "white",
     fontSize: 24,
     fontWeight: "bold",
   },
   metaSubtitle: {
-    color: "#94A3B8",
     fontSize: 14,
     marginTop: 5,
   },
   progressSection: {
-    backgroundColor: "#1E293B",
     padding: 20,
     borderRadius: 24,
     marginBottom: 20,
   },
   progressBarBg: {
     height: 12,
-    backgroundColor: "#334155",
     borderRadius: 6,
     width: "100%",
     overflow: "hidden",
@@ -206,12 +286,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   percentageText: {
-    color: "white",
     fontSize: 20,
     fontWeight: "bold",
   },
   remainingText: {
-    color: "#94A3B8",
     fontSize: 13,
   },
   statsGrid: {
@@ -221,18 +299,15 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 16,
   },
   statLabel: {
-    color: "#64748B",
     fontSize: 12,
     textTransform: "uppercase",
     marginBottom: 5,
   },
   statValue: {
-    color: "white",
     fontSize: 15,
     fontWeight: "bold",
   },
@@ -249,7 +324,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryActionText: {
-    color: "#0F172A",
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -258,7 +332,6 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   secondaryActionText: {
-    color: "#38BDF8",
     fontWeight: "600",
   },
   tipCard: {
@@ -273,7 +346,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(250, 204, 21, 0.2)",
   },
   tipText: {
-    color: "#94A3B8",
     fontSize: 13,
     flex: 1,
     lineHeight: 18,

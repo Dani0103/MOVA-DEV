@@ -8,77 +8,72 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useState } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { universalAlert } from "../../utils/universalAlert";
 import { useAuth } from "../../context/AuthContext";
-import { createMeta } from "../../services/MetasService";
+import { updateMeta } from "../../services/MetasService";
 import { useTheme } from "../../theme/useTheme";
+import DatePickerInput from "../../components/ui/DatePickerInput";
 
-const COLORES_METAS = [
-  "#38BDF8",
-  "#4ADE80",
-  "#FB923C",
-  "#A78BFA",
-  "#F472B6",
-  "#FACC15",
-];
+const COLORES_METAS = ["#38BDF8", "#4ADE80", "#FB923C", "#A78BFA", "#F472B6", "#FACC15"];
 const ICONOS_METAS = [
-  "airplane",
-  "car",
-  "home",
-  "briefcase",
-  "gift",
-  "trophy",
-  "shield-checkmark",
-  "laptop",
-  "cart",
+  "airplane", "car", "home", "briefcase", "gift",
+  "trophy", "shield-checkmark", "laptop", "cart",
 ];
 
-export default function CrearMetaScreen() {
+export default function EditarMetaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
+  const route = useRoute();
   const { token } = useAuth();
-  const [nombre, setNombre] = useState("");
-  const [montoObjetivo, setMontoObjetivo] = useState("");
-  const [montoInicial, setMontoInicial] = useState("");
-  const [colorSelected, setColorSelected] = useState(COLORES_METAS[0]);
-  const [iconSelected, setIconSelected] = useState(ICONOS_METAS[0]);
+
+  const { meta } = route.params;
+
+  const [nombre, setNombre] = useState(meta.nombre ?? "");
+  const [montoObjetivo, setMontoObjetivo] = useState(String(meta.objetivo ?? ""));
+  const [fechaLimite, setFechaLimite] = useState(meta.fecha_limite ?? "");
+  const [colorSelected, setColorSelected] = useState(meta.color ?? COLORES_METAS[0]);
+  const [iconSelected, setIconSelected] = useState(meta.icono ?? ICONOS_METAS[0]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleGuardar = async () => {
-    if (!nombre || !montoObjetivo) {
-      universalAlert(
-        "Error",
-        "El nombre y el monto objetivo son obligatorios.",
-      );
+    if (!nombre.trim()) {
+      universalAlert("Error", "El nombre es obligatorio.");
+      return;
+    }
+    if (!montoObjetivo || parseFloat(montoObjetivo) <= 0) {
+      universalAlert("Error", "Ingresa un monto objetivo válido.");
       return;
     }
 
     try {
       setSubmitting(true);
-      await createMeta(token, {
-        nombre,
-        montoObjetivo,
-        montoInicial,
+      await updateMeta(token, meta.id, {
+        nombre: nombre.trim(),
+        monto_objetivo: parseFloat(montoObjetivo),
+        fecha_objetivo: fechaLimite || null,
         color: colorSelected,
         icono: iconSelected,
       });
       universalAlert(
-        "¡Meta Creada!",
-        "Empieza a ahorrar para cumplir tu sueño.",
-        [{ text: "¡Vamos!", onPress: () => navigation.goBack() }],
+        "¡Meta actualizada!",
+        "Los cambios se guardaron correctamente.",
+        [{ text: "Entendido", onPress: () => navigation.goBack() }]
       );
     } catch (error) {
-      universalAlert("Error", error.message || "No se pudo guardar la meta.");
+      universalAlert("Error", error.message || "No se pudo actualizar la meta.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
-      {/* TopBar */}
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
       <View style={styles.topBar}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -86,59 +81,44 @@ export default function CrearMetaScreen() {
         >
           <Ionicons name="close" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Nueva Meta</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Editar Meta</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Preview Visual */}
-      <View style={[styles.previewCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <View
-          style={[styles.iconBox, { backgroundColor: colorSelected + "20" }]}
-        >
+      {/* Preview */}
+      <View style={[styles.previewCard, { backgroundColor: theme.card, borderColor: colorSelected + "50" }]}>
+        <View style={[styles.iconBox, { backgroundColor: colorSelected + "20" }]}>
           <Ionicons name={iconSelected} size={35} color={colorSelected} />
         </View>
         <Text style={[styles.previewTitle, { color: theme.text }]}>{nombre || "Título de la meta"}</Text>
-        <Text style={[styles.previewSub, { color: theme.primary }]}>
-          $ {(parseFloat(montoObjetivo) || 0).toLocaleString()}
+        <Text style={[styles.previewSub, { color: colorSelected }]}>
+          $ {(parseFloat(montoObjetivo) || 0).toLocaleString("es-CO", { minimumFractionDigits: 0 })}
         </Text>
       </View>
 
       <Text style={[styles.label, { color: theme.textSecondary }]}>¿Qué quieres lograr?</Text>
       <TextInput
-        placeholder="Ej: Viaje a Europa, Fondo de paz mental..."
-        placeholderTextColor={theme.placeholder}
+        placeholder="Ej: Viaje a Europa..."
+        placeholderTextColor={theme.textMuted}
         style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         value={nombre}
         onChangeText={setNombre}
       />
 
-      <View style={styles.row}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Objetivo</Text>
-          <TextInput
-            placeholder="0.00"
-            placeholderTextColor={theme.placeholder}
-            keyboardType="numeric"
-            style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
-            value={montoObjetivo}
-            onChangeText={setMontoObjetivo}
-          />
-        </View>
-        <View style={{ width: 15 }} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Ahorro Inicial</Text>
-          <TextInput
-            placeholder="Opcional"
-            placeholderTextColor={theme.placeholder}
-            keyboardType="numeric"
-            style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
-            value={montoInicial}
-            onChangeText={setMontoInicial}
-          />
-        </View>
-      </View>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Objetivo</Text>
+      <TextInput
+        placeholder="0"
+        placeholderTextColor={theme.textMuted}
+        keyboardType="numeric"
+        style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
+        value={montoObjetivo}
+        onChangeText={setMontoObjetivo}
+      />
 
-      <Text style={[styles.label, { color: theme.textSecondary }]}>Selecciona un Icono</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Fecha Límite (opcional)</Text>
+      <DatePickerInput value={fechaLimite || undefined} onChange={setFechaLimite} />
+
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Ícono</Text>
       <View style={styles.grid}>
         {ICONOS_METAS.map((icon) => (
           <TouchableOpacity
@@ -147,10 +127,7 @@ export default function CrearMetaScreen() {
             style={[
               styles.iconItem,
               { backgroundColor: theme.card },
-              iconSelected === icon && {
-                borderColor: colorSelected,
-                borderWidth: 2,
-              },
+              iconSelected === icon && { borderColor: colorSelected, borderWidth: 2 },
             ]}
           >
             <Ionicons
@@ -162,7 +139,7 @@ export default function CrearMetaScreen() {
         ))}
       </View>
 
-      <Text style={[styles.label, { color: theme.textSecondary }]}>Personaliza el Color</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Color</Text>
       <View style={styles.colorGrid}>
         {COLORES_METAS.map((color) => (
           <TouchableOpacity
@@ -174,22 +151,20 @@ export default function CrearMetaScreen() {
               colorSelected === color && styles.colorActive,
             ]}
           >
-            {colorSelected === color && (
-              <Ionicons name="checkmark" size={16} color="white" />
-            )}
+            {colorSelected === color && <Ionicons name="checkmark" size={16} color="white" />}
           </TouchableOpacity>
         ))}
       </View>
 
       <TouchableOpacity
-        style={[styles.saveBtn, { backgroundColor: theme.primary }]}
+        style={[styles.saveBtn, { backgroundColor: colorSelected }]}
         onPress={handleGuardar}
         disabled={submitting}
       >
         {submitting ? (
-          <ActivityIndicator color={theme.background} />
+          <ActivityIndicator color="white" />
         ) : (
-          <Text style={[styles.saveBtnText, { color: theme.background }]}>Crear Meta Financiera</Text>
+          <Text style={styles.saveBtnText}>Guardar Cambios</Text>
         )}
       </TouchableOpacity>
 
@@ -214,7 +189,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: "center",
     marginBottom: 25,
-    borderStyle: "dashed",
     borderWidth: 1,
   },
   iconBox: {
@@ -226,11 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   previewTitle: { fontSize: 18, fontWeight: "700" },
-  previewSub: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginTop: 5,
-  },
+  previewSub: { fontSize: 20, fontWeight: "bold", marginTop: 5 },
   label: {
     fontSize: 13,
     fontWeight: "600",
@@ -239,12 +209,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 20,
   },
-  input: {
-    padding: 16,
-    borderRadius: 16,
-    fontSize: 16,
-  },
-  row: { flexDirection: "row" },
+  input: { padding: 16, borderRadius: 16, fontSize: 16 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   iconItem: {
     width: 50,
@@ -262,14 +227,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   colorActive: { borderWidth: 2, borderColor: "white" },
-  saveBtn: {
-    padding: 18,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 40,
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  saveBtnText: { fontWeight: "bold", fontSize: 16 },
+  saveBtn: { padding: 18, borderRadius: 16, alignItems: "center", marginTop: 40, elevation: 4 },
+  saveBtnText: { color: "white", fontWeight: "bold", fontSize: 16 },
 });

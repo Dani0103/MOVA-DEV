@@ -51,6 +51,12 @@ export function AuthProvider({ children }) {
     setLoading(false);
   };
 
+  const updateUser = async (updatedUser) => {
+    const merged = { ...user, ...updatedUser };
+    await storage.set(AUTH_KEYS.USER, merged);
+    setUser(merged);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -60,6 +66,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!token,
         login,
         logout,
+        updateUser,
       }}
     >
       {children}

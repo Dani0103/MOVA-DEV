@@ -15,8 +15,10 @@ import { TypeAccount, TypeCurrency } from "../../services/CatalogoService";
 import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
 import FormSelect from "../../components/form/FormSelect";
+import { useTheme } from "../../theme/useTheme";
 
 export default function CrearCuentaScreen() {
+  const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute(); // <-- Añadido para recibir parámetros
   const { user, token } = useAuth();
@@ -107,7 +109,7 @@ export default function CrearCuentaScreen() {
 
       if (esEdicion) {
         // Llamada a la API para actualizar
-        await updateAccount(cuentaAEditar.nombre, dataToSend, token);
+        await updateAccount(cuentaAEditar.id, dataToSend, token);
         universalAlert(
           "¡Actualizado!",
           "Los cambios se guardaron correctamente.",
@@ -152,27 +154,27 @@ export default function CrearCuentaScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.topBar}>
         {/* Título dinámico */}
-        <Text style={styles.title}>
+        <Text style={[styles.title, { color: theme.text }]}>
           {esEdicion ? "Editar Cuenta" : "Nueva Cuenta"}
         </Text>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Text style={styles.label}>Nombre de la cuenta *</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Nombre de la cuenta *</Text>
       <TextInput
         placeholder="Ej: Efectivo o Banco"
-        placeholderTextColor="#64748B"
-        style={styles.input}
+        placeholderTextColor={theme.placeholder}
+        style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         value={nombre}
         onChangeText={setNombre}
-        disabled={esEdicion}
+        editable={true}
       />
 
-      <Text style={styles.label}>Moneda *</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Moneda *</Text>
       <FormSelect
         placeholder="Selecciona una moneda"
         loading={loading}
@@ -184,7 +186,7 @@ export default function CrearCuentaScreen() {
         }))}
       />
 
-      <Text style={styles.label}>Tipo de cuenta *</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Tipo de cuenta *</Text>
       <View style={styles.tipoContainer}>
         {loading
           ? [1, 2, 4].map((i) => (
@@ -192,11 +194,12 @@ export default function CrearCuentaScreen() {
                 key={i}
                 style={[
                   styles.tipoButton,
+                  { backgroundColor: theme.card },
                   styles.loaderPlaceholder,
                   { width: 80 },
                 ]}
               >
-                <ActivityIndicator size="small" color="#38BDF8" />
+                <ActivityIndicator size="small" color={theme.primary} />
               </View>
             ))
           : tiposCuenta.map((item) => (
@@ -204,13 +207,15 @@ export default function CrearCuentaScreen() {
                 key={item.id}
                 style={[
                   styles.tipoButton,
-                  tipoId === item.id && styles.tipoActive,
+                  { backgroundColor: theme.card },
+                  tipoId === item.id && { backgroundColor: theme.primary },
                 ]}
                 onPress={() => setTipoId(item.id)}
               >
                 <Text
                   style={[
                     styles.tipoText,
+                    { color: theme.textSecondary },
                     tipoId === item.id && styles.tipoTextActive,
                   ]}
                 >
@@ -221,13 +226,13 @@ export default function CrearCuentaScreen() {
       </View>
 
       {/* Label dinámico para el saldo */}
-      <Text style={styles.label}>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>
         {esEdicion ? "Saldo Actual *" : "Saldo Inicial *"}
       </Text>
       <TextInput
         placeholder="0.00"
-        placeholderTextColor="#64748B"
-        style={styles.input}
+        placeholderTextColor={theme.placeholder}
+        style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         keyboardType="decimal-pad"
         value={saldo}
         onChangeText={(text) => {
@@ -238,7 +243,7 @@ export default function CrearCuentaScreen() {
         }}
       />
 
-      <Text style={styles.label}>Color Identificador *</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Color Identificador *</Text>
       <View style={styles.colorContainer}>
         {COLORES_DISPONIBLES.map((item) => (
           <TouchableOpacity
@@ -259,7 +264,7 @@ export default function CrearCuentaScreen() {
 
       {/* Botón Guardar con texto dinámico */}
       <TouchableOpacity
-        style={[styles.button, (submitting || loading) && { opacity: 0.7 }]}
+        style={[styles.button, { backgroundColor: theme.primary }, (submitting || loading) && { opacity: 0.7 }]}
         onPress={handleGuardar}
         disabled={submitting || loading}
       >
@@ -273,8 +278,8 @@ export default function CrearCuentaScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={handleCancelar} style={styles.secondaryButton}>
-        <Ionicons name="arrow-back" size={18} color="#94A3B8" />
-        <Text style={styles.secondaryText}>Cancelar y Volver</Text>
+        <Ionicons name="arrow-back" size={18} color={theme.textSecondary} />
+        <Text style={[styles.secondaryText, { color: theme.textSecondary }]}>Cancelar y Volver</Text>
       </TouchableOpacity>
 
       {/* Margen inferior para que no quede pegado abajo al scrollear */}
@@ -286,7 +291,6 @@ export default function CrearCuentaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
     padding: 20,
   },
   topBar: {
@@ -302,19 +306,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 10,
-    backgroundColor: "#1E293B",
   },
   backText: {
-    color: "white",
     fontWeight: "600",
   },
   title: {
-    color: "white",
     fontSize: 20,
     fontWeight: "bold",
   },
   label: {
-    color: "#94A3B8",
     marginBottom: 6,
     marginTop: 10,
     fontSize: 15,
@@ -330,10 +330,8 @@ const styles = StyleSheet.create({
     borderColor: "#38BDF8",
   },
   input: {
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 12,
-    color: "white",
     marginBottom: 10,
   },
   tipoContainer: {
@@ -345,21 +343,14 @@ const styles = StyleSheet.create({
   tipoButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: "#1E293B",
     borderRadius: 10,
   },
-  tipoActive: {
-    backgroundColor: "#38BDF8",
-  },
-  tipoText: {
-    color: "#94A3B8",
-  },
+  tipoText: {},
   tipoTextActive: {
     color: "white",
     fontWeight: "bold",
   },
   button: {
-    backgroundColor: "#38BDF8",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
@@ -381,7 +372,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   secondaryText: {
-    color: "#94A3B8",
     fontWeight: "500",
   },
   colorContainer: {

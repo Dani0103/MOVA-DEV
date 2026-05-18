@@ -22,24 +22,15 @@ export async function createMovimiento(formData, token) {
   });
 }
 
-export async function editMovimiento(formData, token) {
-  // 1. Preparamos el cuerpo exactamente como lo espera el Controller de Laravel
+export async function editMovimiento(id, data, token) {
   const body = {
-    cuenta_origen_id: formData.cuenta_origen_id,
-    cuenta_destino_id: formData.cuenta_destino_id,
-    categoria_id: formData.categoria_id,
-    monto: formData.monto,
-    tipo: formData.tipo,
-    estado: formData.estado || "completada",
-    tasa_cambio: formData.tasa_cambio || 1,
-    monto_convertido: formData.monto_convertido || formData.monto,
-    fecha: formData.fecha,
-    descripcion: formData.descripcion,
-    notas_internas: formData.notas_internas || "",
+    descripcion: data.descripcion,
+    monto: data.monto,
+    fecha: data.fecha,
+    categoria_id: data.categoria_id,
   };
 
-  return await apiFetch("/transacciones", {
-    // Quitamos /api si ya está en la base config
+  return await apiFetch(`/transacciones/${id}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -50,19 +41,12 @@ export async function editMovimiento(formData, token) {
   });
 }
 
-// export async function archivatMovimiento(formData, token) {
-//   const body = {
-//     cuenta_origen_id: formData.cuenta_origen_id,
-//   };
-
-//   return await apiFetch("/transacciones", {
-//     // Quitamos /api si ya está en la base config
-//     method: "DELETE",
-//     headers: {
-//       Authorization: `Bearer ${token}`,
-//       "Content-Type": "application/json",
-//       Accept: "application/json",
-//     },
-//     body: JSON.stringify(body),
-//   });
-// }
+export async function deleteMovimiento(id, token) {
+  return await apiFetch(`/transacciones/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+}

@@ -8,12 +8,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useState, useMemo } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme/useTheme";
 import { useAuth } from "../../context/AuthContext";
-import { createDeuda } from "../../services/DeudaService";
+import { updateDeuda } from "../../services/DeudaService";
 import { universalAlert } from "../../utils/universalAlert";
+import DatePickerInput from "../../components/ui/DatePickerInput";
 
 const COLORES_DEUDA = ["#F87171", "#FB923C", "#FACC15", "#4ADE80", "#38BDF8", "#A78BFA"];
 const ICONOS_DEUDA = [
@@ -21,48 +22,48 @@ const ICONOS_DEUDA = [
   "school", "medkit", "phone-portrait", "gift",
 ];
 
-/** Amortización francesa — igual que backend */
 function calcCuotaMensual(montoTotal, tasaAnual, numeroCuotas) {
   const P = parseFloat(montoTotal) || 0;
   const n = parseInt(numeroCuotas) || 0;
   if (P <= 0 || n <= 0) return null;
-
   const tasa = parseFloat(tasaAnual) || 0;
   if (tasa <= 0) return P / n;
-
   const r = (tasa / 100) / 12;
   const factor = Math.pow(1 + r, n);
   return (P * r * factor) / (factor - 1);
 }
 
-export default function CrearDeudaScreen() {
+export default function EditarDeudaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
+  const route = useRoute();
   const { token } = useAuth();
 
-  const [acreedor, setAcreedor] = useState("");
-  const [montoTotal, setMontoTotal] = useState("");
-  const [tasaInteres, setTasaInteres] = useState("");
-  const [numeroCuotas, setNumeroCuotas] = useState("");
-  const [fechaInicio, setFechaInicio] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [colorSelected, setColorSelected] = useState(COLORES_DEUDA[0]);
-  const [iconSelected, setIconSelected] = useState(ICONOS_DEUDA[0]);
+  const { deuda } = route.params;
+
+  const [acreedor, setAcreedor] = useState(deuda.acreedor ?? "");
+  const [montoTotal, setMontoTotal] = useState(String(deuda.monto_total ?? ""));
+  const [tasaInteres, setTasaInteres] = useState(
+    deuda.tasa_interes != null ? String(deuda.tasa_interes) : ""
+  );
+  const [numeroCuotas, setNumeroCuotas] = useState(
+    deuda.numero_cuotas != null ? String(deuda.numero_cuotas) : ""
+  );
+  const [fechaInicio, setFechaInicio] = useState(
+    deuda.fecha_inicio ? String(deuda.fecha_inicio).slice(0, 10) : ""
+  );
+  const [descripcion, setDescripcion] = useState(deuda.descripcion ?? "");
+  const [colorSelected, setColorSelected] = useState(deuda.color ?? COLORES_DEUDA[0]);
+  const [iconSelected, setIconSelected] = useState(deuda.icono ?? ICONOS_DEUDA[0]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Cálculo en tiempo real de cuota mensual
   const cuotaMensual = useMemo(
     () => calcCuotaMensual(montoTotal, tasaInteres, numeroCuotas),
     [montoTotal, tasaInteres, numeroCuotas]
   );
 
-  const totalAPagar = cuotaMensual !== null && parseInt(numeroCuotas) > 0
-    ? cuotaMensual * parseInt(numeroCuotas)
-    : null;
-
-  const totalIntereses = totalAPagar !== null
-    ? totalAPagar - (parseFloat(montoTotal) || 0)
-    : null;
+  const fmt = (n) =>
+    n.toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
   const handleGuardar = async () => {
     if (!acreedor.trim()) {
@@ -76,29 +77,27 @@ export default function CrearDeudaScreen() {
 
     try {
       setSubmitting(true);
-      await createDeuda(token, {
+      await updateDeuda(token, deuda.id, {
         acreedor: acreedor.trim(),
         descripcion: descripcion.trim() || null,
-        monto_total: montoTotal,
-        tasa_interes_anual: tasaInteres || null,
-        numero_cuotas: numeroCuotas || null,
+        monto_total: parseFloat(montoTotal),
+        tasa_interes_anual: tasaInteres ? parseFloat(tasaInteres) : null,
+        numero_cuotas: numeroCuotas ? parseInt(numeroCuotas) : null,
         fecha_inicio: fechaInicio || null,
         color: colorSelected,
         icono: iconSelected,
       });
       universalAlert(
-        "¡Deuda registrada!",
-        "Podrás hacer seguimiento de tus pagos desde aquí.",
+        "¡Deuda actualizada!",
+        "Los cambios se guardaron correctamente.",
         [{ text: "Entendido", onPress: () => navigation.goBack() }]
       );
     } catch (error) {
-      universalAlert("Error", error.message || "No se pudo guardar la deuda.");
+      universalAlert("Error", error.message || "No se pudo actualizar la deuda.");
     } finally {
       setSubmitting(false);
     }
   };
-
-  const fmt = (n) => n.toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
   return (
     <ScrollView
@@ -113,7 +112,7 @@ export default function CrearDeudaScreen() {
         >
           <Ionicons name="close" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Nueva Deuda</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Editar Deuda</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -127,33 +126,12 @@ export default function CrearDeudaScreen() {
           $ {fmt(parseFloat(montoTotal) || 0)}
         </Text>
 
-        {/* Cuota preview inline */}
         {cuotaMensual !== null && (
-          <View style={[styles.cuotaPreviewRow, { backgroundColor: colorSelected + "18" }]}>
-            <View style={styles.cuotaPreviewItem}>
-              <Text style={[styles.cuotaPreviewLabel, { color: theme.textMuted }]}>Cuota/mes</Text>
-              <Text style={[styles.cuotaPreviewValue, { color: colorSelected }]}>
-                $ {fmt(cuotaMensual)}
-              </Text>
-            </View>
-            {totalIntereses !== null && totalIntereses > 0 && (
-              <>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <View style={styles.cuotaPreviewItem}>
-                  <Text style={[styles.cuotaPreviewLabel, { color: theme.textMuted }]}>Total intereses</Text>
-                  <Text style={[styles.cuotaPreviewValue, { color: theme.textSecondary }]}>
-                    $ {fmt(totalIntereses)}
-                  </Text>
-                </View>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <View style={styles.cuotaPreviewItem}>
-                  <Text style={[styles.cuotaPreviewLabel, { color: theme.textMuted }]}>Total a pagar</Text>
-                  <Text style={[styles.cuotaPreviewValue, { color: theme.text }]}>
-                    $ {fmt(totalAPagar)}
-                  </Text>
-                </View>
-              </>
-            )}
+          <View style={[styles.cuotaPreview, { backgroundColor: colorSelected + "18" }]}>
+            <Text style={[styles.cuotaLabel, { color: theme.textMuted }]}>Cuota/mes</Text>
+            <Text style={[styles.cuotaValue, { color: colorSelected }]}>
+              $ {fmt(cuotaMensual)}
+            </Text>
           </View>
         )}
       </View>
@@ -168,7 +146,7 @@ export default function CrearDeudaScreen() {
         onChangeText={setAcreedor}
       />
 
-      {/* Monto Total */}
+      {/* Monto total */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Total</Text>
       <TextInput
         style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
@@ -179,7 +157,7 @@ export default function CrearDeudaScreen() {
         onChangeText={setMontoTotal}
       />
 
-      {/* Tasa + Cuotas en fila */}
+      {/* Tasa + Cuotas */}
       <View style={styles.row}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>Tasa de Interés %</Text>
@@ -208,13 +186,7 @@ export default function CrearDeudaScreen() {
 
       {/* Fecha inicio */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Fecha Inicio de la Deuda</Text>
-      <TextInput
-        style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
-        placeholder="YYYY-MM-DD (opcional)"
-        placeholderTextColor={theme.textMuted}
-        value={fechaInicio}
-        onChangeText={setFechaInicio}
-      />
+      <DatePickerInput value={fechaInicio || undefined} onChange={setFechaInicio} />
 
       {/* Descripción */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Descripción</Text>
@@ -227,7 +199,7 @@ export default function CrearDeudaScreen() {
         multiline
       />
 
-      {/* Selector de Icono */}
+      {/* Ícono */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Ícono</Text>
       <View style={styles.grid}>
         {ICONOS_DEUDA.map((icon) => (
@@ -249,7 +221,7 @@ export default function CrearDeudaScreen() {
         ))}
       </View>
 
-      {/* Selector de Color */}
+      {/* Color */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Color</Text>
       <View style={styles.colorRow}>
         {COLORES_DEUDA.map((color) => (
@@ -267,7 +239,6 @@ export default function CrearDeudaScreen() {
         ))}
       </View>
 
-      {/* Botón */}
       <TouchableOpacity
         style={[styles.saveBtn, { backgroundColor: colorSelected }]}
         onPress={handleGuardar}
@@ -276,7 +247,7 @@ export default function CrearDeudaScreen() {
         {submitting ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text style={styles.saveBtnText}>Registrar Deuda</Text>
+          <Text style={styles.saveBtnText}>Guardar Cambios</Text>
         )}
       </TouchableOpacity>
 
@@ -313,19 +284,18 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   previewTitle: { fontSize: 18, fontWeight: "700" },
-  previewAmount: { fontSize: 22, fontWeight: "bold", marginBottom: 4 },
-  cuotaPreviewRow: {
+  previewAmount: { fontSize: 22, fontWeight: "bold" },
+  cuotaPreview: {
     flexDirection: "row",
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    marginTop: 6,
-    alignSelf: "stretch",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 4,
   },
-  cuotaPreviewItem: { flex: 1, alignItems: "center" },
-  cuotaPreviewLabel: { fontSize: 10, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 3 },
-  cuotaPreviewValue: { fontSize: 14, fontWeight: "700" },
-  divider: { width: 1, marginVertical: 4 },
+  cuotaLabel: { fontSize: 12 },
+  cuotaValue: { fontSize: 15, fontWeight: "700" },
   label: {
     fontSize: 13,
     fontWeight: "600",
@@ -353,12 +323,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   colorActive: { borderWidth: 3, borderColor: "white" },
-  saveBtn: {
-    padding: 18,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 35,
-    elevation: 4,
-  },
+  saveBtn: { padding: 18, borderRadius: 16, alignItems: "center", marginTop: 35, elevation: 4 },
   saveBtnText: { color: "white", fontWeight: "bold", fontSize: 16 },
 });

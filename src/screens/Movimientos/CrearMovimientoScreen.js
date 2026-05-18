@@ -13,6 +13,8 @@ import { createMovimiento } from "../../services/MovimientosService";
 import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
 import { TypeMovement } from "../../services/CatalogoService";
+import { useTheme } from "../../theme/useTheme";
+import DatePickerInput from "../../components/ui/DatePickerInput";
 
 // Supongamos que recibes 'categorias' y 'setCateogrias' como props igual que las cuentas
 export default function CrearMovimientoScreen({
@@ -24,6 +26,7 @@ export default function CrearMovimientoScreen({
   categorias = [], // Añadido para validación
   onSuccess,
 }) {
+  const theme = useTheme();
   const { token } = useAuth();
 
   const [descripcion, setDescripcion] = useState("");
@@ -31,6 +34,7 @@ export default function CrearMovimientoScreen({
   const [tipo, setTipo] = useState(null);
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -56,7 +60,7 @@ export default function CrearMovimientoScreen({
       estado: "completada",
       tasa_cambio: 1,
       monto_convertido: montoNum,
-      fecha: new Date().toISOString().split("T")[0], // "2026-03-04"
+      fecha,
       descripcion: descripcion.trim(),
       notas_internas: "",
       etiqueta_ids: [], // Si no manejas etiquetas, envíalo vacío
@@ -129,9 +133,9 @@ export default function CrearMovimientoScreen({
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Nuevo Movimiento</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Nuevo Movimiento</Text>
 
         {error ? (
           <View style={styles.errorBadge}>
@@ -141,12 +145,12 @@ export default function CrearMovimientoScreen({
 
         {/* MONTO */}
         <View style={styles.montoContainer}>
-          <Text style={styles.currencySymbol}>$</Text>
+          <Text style={[styles.currencySymbol, { color: theme.primary }]}>$</Text>
           <TextInput
             placeholder="0"
             placeholderTextColor="#475569"
             keyboardType="numeric"
-            style={styles.montoInput}
+            style={[styles.montoInput, { color: theme.text, borderColor: theme.border }]}
             value={monto}
             onChangeText={(v) => {
               setMonto(v);
@@ -155,11 +159,11 @@ export default function CrearMovimientoScreen({
           />
         </View>
 
-        <Text style={styles.label}>Tipo de movimiento</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Tipo de movimiento</Text>
 
         {tiposMovimientos.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
+          <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.primary }]}>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               No se pudieron cargar los tipos de movimiento.
             </Text>
             {/* Opcional: un botón para reintentar */}
@@ -177,6 +181,7 @@ export default function CrearMovimientoScreen({
                 key={item.id}
                 style={[
                   styles.selectorButton,
+                  { backgroundColor: theme.card },
                   tipo === item.id && {
                     borderColor: item.color,
                     backgroundColor: item.color + "15",
@@ -190,6 +195,7 @@ export default function CrearMovimientoScreen({
                 <Text
                   style={[
                     styles.selectorText,
+                    { color: theme.textSecondary },
                     tipo === item.id && { color: item.color },
                   ]}
                 >
@@ -201,7 +207,7 @@ export default function CrearMovimientoScreen({
         )}
 
         {/* VALIDACIÓN CATEGORÍAS */}
-        <Text style={styles.label}>Categoría</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Categoría</Text>
         {(() => {
           // 1. Validamos primero si ya se seleccionó un tipo de movimiento
           if (!tipo) {
@@ -209,10 +215,10 @@ export default function CrearMovimientoScreen({
               <View
                 style={[
                   styles.emptyCard,
-                  { borderStyle: "solid", borderColor: "#334155" },
+                  { backgroundColor: theme.card, borderStyle: "solid", borderColor: theme.border },
                 ]}
               >
-                <Text style={styles.emptyText}>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                   Selecciona primero un tipo de movimiento para ver las
                   categorías.
                 </Text>
@@ -226,8 +232,8 @@ export default function CrearMovimientoScreen({
           // 3. Si se seleccionó tipo pero no hay categorías creadas para ese tipo
           if (categoriasPorTipo.length === 0) {
             return (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>
+              <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.primary }]}>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                   No tienes categorías de tipo "
                   {TRANSACTION_TYPES.find((t) => t.id === tipo)?.label}"
                 </Text>
@@ -253,6 +259,7 @@ export default function CrearMovimientoScreen({
                     key={cat.id}
                     style={[
                       styles.chip,
+                      { backgroundColor: theme.card },
                       isSelected && {
                         backgroundColor: cat.color_hex + "20",
                         borderColor: cat.color_hex,
@@ -267,6 +274,7 @@ export default function CrearMovimientoScreen({
                     <Text
                       style={[
                         styles.chipText,
+                        { color: theme.textSecondary },
                         isSelected && {
                           color: cat.color_hex,
                           fontWeight: "bold",
@@ -283,10 +291,10 @@ export default function CrearMovimientoScreen({
         })()}
 
         {/* VALIDACIÓN CUENTAS */}
-        <Text style={styles.label}>Cuenta</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Cuenta</Text>
         {!cuentas || cuentas.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
+          <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.primary }]}>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               Necesitas una cuenta para operar
             </Text>
             <TouchableOpacity
@@ -303,7 +311,8 @@ export default function CrearMovimientoScreen({
                 key={c.id}
                 style={[
                   styles.chip,
-                  cuentaSeleccionada?.id === c.id && styles.chipActive,
+                  { backgroundColor: theme.card },
+                  cuentaSeleccionada?.id === c.id && { backgroundColor: theme.primary },
                 ]}
                 onPress={() => {
                   setCuentaSeleccionada(c);
@@ -313,7 +322,8 @@ export default function CrearMovimientoScreen({
                 <Text
                   style={[
                     styles.chipText,
-                    cuentaSeleccionada?.id === c.id && styles.chipTextActive,
+                    { color: theme.textSecondary },
+                    cuentaSeleccionada?.id === c.id && { color: theme.background, fontWeight: "bold" },
                   ]}
                 >
                   {c.nombre}
@@ -323,11 +333,14 @@ export default function CrearMovimientoScreen({
           </View>
         )}
 
-        <Text style={styles.label}>Descripción</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Fecha</Text>
+        <DatePickerInput value={fecha} onChange={setFecha} />
+
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Descripción</Text>
         <TextInput
           placeholder="Ej. Cena con amigos"
-          placeholderTextColor="#94A3B8"
-          style={styles.input}
+          placeholderTextColor={theme.textSecondary}
+          style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
           value={descripcion}
           onChangeText={(v) => {
             setDescripcion(v);
@@ -339,18 +352,19 @@ export default function CrearMovimientoScreen({
       </ScrollView>
 
       {/* FOOTER */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.card }]}>
         <TouchableOpacity
           style={styles.secondaryButton}
           onPress={() => navigation.goBack()}
           disabled={submitting}
         >
-          <Text style={styles.secondaryText}>Cancelar</Text>
+          <Text style={[styles.secondaryText, { color: theme.textSecondary }]}>Cancelar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
             styles.button,
+            { backgroundColor: theme.primary },
             (submitting || !cuentas?.length || !categorias?.length) && {
               opacity: 0.5,
             },
@@ -359,9 +373,9 @@ export default function CrearMovimientoScreen({
           disabled={submitting || !cuentas?.length || !categorias?.length}
         >
           {submitting ? (
-            <ActivityIndicator color="#0F172A" />
+            <ActivityIndicator color={theme.background} />
           ) : (
-            <Text style={styles.buttonText}>Confirmar</Text>
+            <Text style={[styles.buttonText, { color: theme.background }]}>Confirmar</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -372,19 +386,16 @@ export default function CrearMovimientoScreen({
 const styles = StyleSheet.create({
   // ... (tus estilos anteriores se mantienen)
   container: { flex: 1, padding: 20 },
-  title: { color: "white", fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   label: {
-    color: "#94A3B8",
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 10,
     marginTop: 15,
   },
   input: {
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 12,
-    color: "white",
     fontSize: 16,
   },
 
@@ -395,18 +406,14 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   currencySymbol: {
-    color: "#38BDF8",
     fontSize: 40,
     fontWeight: "bold",
     marginRight: 10,
   },
   montoInput: {
-    color: "white",
     fontSize: 48,
     fontWeight: "bold",
     minWidth: 100,
-    borderColor: "white",
-    borderColor: "#334155",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
@@ -419,52 +426,44 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
     borderRadius: 12,
-    backgroundColor: "#1E293B",
     borderWidth: 2,
     borderColor: "transparent",
   },
-  selectorText: { color: "#94A3B8", fontWeight: "bold" },
+  selectorText: { fontWeight: "bold" },
 
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: "#1E293B",
     marginBottom: 5,
   },
-  chipActive: { backgroundColor: "#38BDF8" },
-  chipText: { color: "#94A3B8", fontWeight: "500" },
-  chipTextActive: { color: "#0F172A", fontWeight: "bold" },
+  chipText: { fontWeight: "500" },
 
   footer: {
     flexDirection: "row",
     padding: 20,
-    backgroundColor: "#1E293B",
     gap: 10,
   },
   button: {
     flex: 2,
-    backgroundColor: "#38BDF8",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  buttonText: { fontWeight: "bold", color: "#0F172A", fontSize: 16 },
+  buttonText: { fontWeight: "bold", fontSize: 16 },
   secondaryButton: { flex: 1, padding: 16, alignItems: "center" },
-  secondaryText: { color: "#94A3B8", fontWeight: "600" },
+  secondaryText: { fontWeight: "600" },
 
   // ESTILOS DE ESTADO VACÍO
   emptyCard: {
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
     borderStyle: "dashed",
-    borderColor: "#38BDF8",
   },
-  emptyText: { color: "#94A3B8", marginBottom: 10, fontSize: 13 },
+  emptyText: { marginBottom: 10, fontSize: 13 },
   createBtn: {
     backgroundColor: "#38BDF820",
     paddingVertical: 8,

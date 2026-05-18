@@ -14,8 +14,10 @@ import { universalAlert } from "../../utils/universalAlert";
 import { GetAccount } from "../../services/CuentaService";
 import { useAuth } from "../../context/AuthContext";
 import { useAccounts } from "../../context/AccountContext";
+import { useTheme } from "../../theme/useTheme";
 
 export default function CuentasScreen() {
+  const theme = useTheme();
   const navigation = useNavigation();
   const { token } = useAuth();
 
@@ -69,21 +71,21 @@ export default function CuentasScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
         style={styles.containerPadre}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#38BDF8"
+            tintColor={theme.primary}
           />
         }
       >
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Mis Cuentas</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Mis Cuentas</Text>
           <TouchableOpacity
-            style={styles.addButton}
+            style={[styles.addButton, { backgroundColor: theme.primary }]}
             onPress={() => navigation.navigate("CrearCuenta")}
           >
             <Ionicons name="add" size={24} color="white" />
@@ -93,7 +95,7 @@ export default function CuentasScreen() {
         {loading ? (
           <ActivityIndicator
             size="large"
-            color="#38BDF8"
+            color={theme.primary}
             style={{ marginTop: 20 }}
           />
         ) : cuentas.length > 0 ? (
@@ -102,35 +104,36 @@ export default function CuentasScreen() {
               key={cuenta.id}
               style={[
                 styles.card,
+                { backgroundColor: theme.card },
                 {
                   borderLeftWidth: 5,
-                  borderLeftColor: cuenta.color_hex || "#38BDF8",
+                  borderLeftColor: cuenta.color_hex || theme.primary,
                 },
               ]}
               onPress={() => navigation.navigate("DetalleCuenta", { cuenta })}
             >
               <View style={styles.infoContainer}>
-                <Text style={styles.accountName}>{cuenta.nombre}</Text>
-                <Text style={styles.accountType}>
+                <Text style={[styles.accountName, { color: theme.text }]}>{cuenta.nombre}</Text>
+                <Text style={[styles.accountType, { color: theme.textSecondary }]}>
                   {cuenta.tipo_cuenta?.nombre || "General"}
                 </Text>
               </View>
 
               <View style={styles.balanceContainer}>
-                <Text style={styles.balance}>
+                <Text style={[styles.balance, { color: theme.primary }]}>
                   {cuenta.moneda?.simbolo || "$"}{" "}
                   {parseFloat(cuenta.saldo_actual).toLocaleString("es-CO", {
                     minimumFractionDigits: 0,
                   })}
                 </Text>
-                <Text style={styles.currencyCode}>{cuenta.moneda?.codigo}</Text>
+                <Text style={[styles.currencyCode, { color: theme.textMuted }]}>{cuenta.moneda?.codigo}</Text>
               </View>
             </TouchableOpacity>
           ))
         ) : (
           <View style={styles.emptyContainer}>
-            <Ionicons name="wallet-outline" size={48} color="#1E293B" />
-            <Text style={styles.emptyText}>No hay cuentas registradas</Text>
+            <Ionicons name="wallet-outline" size={48} color={theme.card} />
+            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No hay cuentas registradas</Text>
           </View>
         )}
       </ScrollView>
@@ -158,10 +161,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "white",
   },
   card: {
-    backgroundColor: "#1E293B",
     padding: 18,
     borderRadius: 16,
     marginBottom: 15,
@@ -180,12 +181,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   accountName: {
-    color: "white",
     fontSize: 17,
     fontWeight: "700",
   },
   accountType: {
-    color: "#94A3B8",
     marginTop: 4,
     fontSize: 13,
   },
@@ -193,17 +192,14 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   balance: {
-    color: "#38BDF8",
     fontWeight: "bold",
     fontSize: 18,
   },
   currencyCode: {
-    color: "#64748B",
     fontSize: 11,
     fontWeight: "600",
   },
   addButton: {
-    backgroundColor: "#38BDF8",
     width: 42,
     height: 42,
     borderRadius: 21,
@@ -217,7 +213,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: "#64748B",
     marginTop: 10,
     textAlign: "center",
   },

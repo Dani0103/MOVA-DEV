@@ -11,13 +11,18 @@ import { useState } from "react";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAccounts } from "../../context/AccountContext";
+import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
+import { createAporte } from "../../services/MetasService";
+import { useTheme } from "../../theme/useTheme";
 
 export default function AddAhorroScreen() {
+  const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const { meta } = route.params; // La meta a la que le sumaremos dinero
-  const { cuentas, refreshAccounts } = useAccounts(); // Traemos las cuentas para elegir de dónde sale el dinero
+  const { token } = useAuth();
+  const { cuentas } = useAccounts();
 
   const [monto, setMonto] = useState("");
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
@@ -35,57 +40,49 @@ export default function AddAhorroScreen() {
 
     try {
       setSubmitting(true);
-
-      // Aquí iría tu lógica de API:
-      // 1. Crear un movimiento de tipo 'gasto' o 'transferencia' en la cuenta de origen.
-      // 2. Actualizar el saldo 'actual' de la meta en la DB.
-
-      console.log(
-        `Ahorrando $${monto} en ${meta.nombre} desde ${cuentaSeleccionada.nombre}`,
-      );
-
+      await createAporte(token, meta.id, { monto });
       universalAlert(
         "¡Ahorro registrado!",
-        `Has sumado dinero a tu meta: ${meta.nombre}`,
+        `Has sumado $${parseFloat(monto).toLocaleString()} a tu meta: ${meta.nombre}`,
         [{ text: "Genial", onPress: () => navigation.goBack() }],
       );
     } catch (error) {
-      universalAlert("Error", "No se pudo procesar el ahorro.");
+      universalAlert("Error", error.message || "No se pudo procesar el ahorro.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.closeBtn}
+          style={[styles.closeBtn, { backgroundColor: theme.card }]}
         >
-          <Ionicons name="close" size={24} color="white" />
+          <Ionicons name="close" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nuevo Aporte</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Nuevo Aporte</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Info de la Meta */}
         <View style={styles.metaSummary}>
-          <Text style={styles.labelCenter}>Destino</Text>
+          <Text style={[styles.labelCenter, { color: theme.textMuted }]}>Destino</Text>
           <View style={[styles.metaBadge, { borderColor: meta.color }]}>
             <Ionicons name={meta.icono} size={20} color={meta.color} />
-            <Text style={styles.metaName}>{meta.nombre}</Text>
+            <Text style={[styles.metaName, { color: theme.text }]}>{meta.nombre}</Text>
           </View>
         </View>
 
         {/* Input de Monto */}
         <View style={styles.amountContainer}>
-          <Text style={styles.currencySymbol}>$</Text>
+          <Text style={[styles.currencySymbol, { color: theme.text }]}>$</Text>
           <TextInput
-            style={styles.amountInput}
+            style={[styles.amountInput, { color: theme.text }]}
             placeholder="0"
-            placeholderTextColor="#334155"
+            placeholderTextColor={theme.cardSecondary}
             keyboardType="numeric"
             value={monto}
             onChangeText={setMonto}
@@ -94,16 +91,17 @@ export default function AddAhorroScreen() {
         </View>
 
         {/* Selector de Cuenta de Origen */}
-        <Text style={styles.label}>¿De qué cuenta sale el dinero?</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>¿De qué cuenta sale el dinero?</Text>
         <View style={styles.selectorContainer}>
           {cuentas.map((c) => (
             <TouchableOpacity
               key={c.id}
               style={[
                 styles.selectorButton,
+                { backgroundColor: theme.card },
                 cuentaSeleccionada?.id === c.id && {
-                  backgroundColor: (c.color_hex || "#38BDF8") + "20",
-                  borderColor: c.color_hex || "#38BDF8",
+                  backgroundColor: (c.color_hex || theme.primary) + "20",
+                  borderColor: c.color_hex || theme.primary,
                   borderWidth: 1,
                 },
               ]}
@@ -112,15 +110,16 @@ export default function AddAhorroScreen() {
               <Text
                 style={[
                   styles.selectorText,
+                  { color: theme.textSecondary },
                   cuentaSeleccionada?.id === c.id && {
-                    color: c.color_hex || "#38BDF8",
+                    color: c.color_hex || theme.primary,
                     fontWeight: "bold",
                   },
                 ]}
               >
                 {c.nombre}
               </Text>
-              <Text style={styles.accountBalance}>
+              <Text style={[styles.accountBalance, { color: theme.textMuted }]}>
                 Saldo: ${parseFloat(c.saldo_actual).toLocaleString()}
               </Text>
             </TouchableOpacity>
@@ -134,9 +133,9 @@ export default function AddAhorroScreen() {
           disabled={submitting}
         >
           {submitting ? (
-            <ActivityIndicator color="#0F172A" />
+            <ActivityIndicator color={theme.background} />
           ) : (
-            <Text style={styles.saveBtnText}>Confirmar Ahorro</Text>
+            <Text style={[styles.saveBtnText, { color: theme.background }]}>Confirmar Ahorro</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -145,7 +144,7 @@ export default function AddAhorroScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0F172A", paddingHorizontal: 20 },
+  container: { flex: 1, paddingHorizontal: 20 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -153,11 +152,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     marginBottom: 30,
   },
-  closeBtn: { padding: 8, backgroundColor: "#1E293B", borderRadius: 12 },
-  headerTitle: { color: "white", fontSize: 18, fontWeight: "bold" },
+  closeBtn: { padding: 8, borderRadius: 12 },
+  headerTitle: { fontSize: 18, fontWeight: "bold" },
   metaSummary: { alignItems: "center", marginBottom: 30 },
   labelCenter: {
-    color: "#64748B",
     fontSize: 12,
     textTransform: "uppercase",
     marginBottom: 10,
@@ -171,7 +169,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 8,
   },
-  metaName: { color: "white", fontWeight: "700" },
+  metaName: { fontWeight: "700" },
   amountContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -180,19 +178,16 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     fontSize: 40,
-    color: "white",
     fontWeight: "bold",
     marginRight: 10,
   },
   amountInput: {
     fontSize: 50,
-    color: "white",
     fontWeight: "bold",
     width: "80%",
     textAlign: "center",
   },
   label: {
-    color: "#94A3B8",
     fontSize: 13,
     fontWeight: "600",
     textTransform: "uppercase",
@@ -207,13 +202,12 @@ const styles = StyleSheet.create({
   },
   selectorButton: {
     padding: 15,
-    backgroundColor: "#1E293B",
     borderRadius: 16,
     minWidth: "47%",
     alignItems: "center",
   },
-  selectorText: { color: "#94A3B8", fontSize: 14, fontWeight: "600" },
-  accountBalance: { color: "#64748B", fontSize: 11, marginTop: 4 },
+  selectorText: { fontSize: 14, fontWeight: "600" },
+  accountBalance: { fontSize: 11, marginTop: 4 },
   saveBtn: {
     padding: 18,
     borderRadius: 16,
@@ -221,5 +215,5 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 40,
   },
-  saveBtnText: { color: "#0F172A", fontWeight: "bold", fontSize: 16 },
+  saveBtnText: { fontWeight: "bold", fontSize: 16 },
 });

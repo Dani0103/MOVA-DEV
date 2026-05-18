@@ -13,8 +13,10 @@ import { validateLogin } from "../validators/loginValidator";
 import { universalAlert } from "../utils/universalAlert";
 import { parseError } from "../utils/parseError";
 import FormInput from "../components/form/FormInput";
+import { useTheme } from "../theme/useTheme";
 
 export default function LoginScreen({ navigation }) {
+  const theme = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -62,28 +64,28 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.headerSection}>
-        <Text style={styles.title}>Bienvenido</Text>
-        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Bienvenido</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Inicia sesión para continuar</Text>
       </View>
 
       <View style={styles.formSection}>
-        <Text style={styles.label}>Correo electrónico</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Correo electrónico</Text>
         <FormInput
           placeholder="ejemplo@correo.com"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
 
-        <Text style={styles.label}>Contraseña</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Contraseña</Text>
         {/* 🔹 Agregamos props para el icono y la visibilidad */}
         <FormInput
           placeholder="********"
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.placeholder}
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword} // Si showPassword es false, se oculta
@@ -92,14 +94,14 @@ export default function LoginScreen({ navigation }) {
         />
 
         <TouchableOpacity
-          style={[styles.mainButton, submitting && { opacity: 0.7 }]}
+          style={[styles.mainButton, { backgroundColor: theme.primary }, submitting && { opacity: 0.7 }]}
           onPress={handleLogin}
           disabled={submitting}
         >
           {submitting ? (
-            <ActivityIndicator color="#0F172A" />
+            <ActivityIndicator color={theme.background} />
           ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
+            <Text style={[styles.buttonText, { color: theme.background }]}>Entrar</Text>
           )}
         </TouchableOpacity>
 
@@ -107,9 +109,9 @@ export default function LoginScreen({ navigation }) {
           onPress={() => navigation.navigate("Register")}
           style={styles.linkContainer}
         >
-          <Text style={styles.linkText}>
+          <Text style={[styles.linkText, { color: theme.textSecondary }]}>
             ¿No tienes cuenta?{" "}
-            <Text style={styles.linkHighlight}>Regístrate</Text>
+            <Text style={[styles.linkHighlight, { color: theme.primary }]}>Regístrate</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -120,7 +122,6 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A", // Fondo oscuro de tu app
     padding: 24,
     justifyContent: "center",
   },
@@ -129,37 +130,31 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    color: "white",
     fontWeight: "bold",
   },
   subtitle: {
     fontSize: 16,
-    color: "#94A3B8",
     marginTop: 8,
   },
   formSection: {
     width: "100%",
   },
   label: {
-    color: "#94A3B8",
     marginBottom: 8,
     fontSize: 14,
     fontWeight: "600",
   },
   mainButton: {
-    backgroundColor: "#38BDF8", // El azul brillante de tus cuentas
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 20,
-    shadowColor: "#38BDF8",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
   },
   buttonText: {
-    color: "#0F172A",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -168,11 +163,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   linkText: {
-    color: "#94A3B8",
     fontSize: 14,
   },
   linkHighlight: {
-    color: "#38BDF8",
     fontWeight: "bold",
   },
 });

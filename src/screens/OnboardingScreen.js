@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import AppIntroSlider from "react-native-app-intro-slider";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../theme/useTheme";
 
 const slides = [
   {
@@ -42,46 +43,47 @@ const slides = [
 ];
 
 export default function OnboardingScreen({ onFinish }) {
+  const theme = useTheme();
   const sliderRef = React.useRef(null);
 
   const renderItem = ({ item }) => {
     return (
-      <View style={styles.slide}>
+      <View style={[styles.slide, { backgroundColor: "transparent" }]}>
         <View
           style={[styles.iconContainer, { backgroundColor: item.color + "20" }]}
         >
           <Ionicons name={item.icon} size={100} color={item.color} />
         </View>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.text}>{item.text}</Text>
+        <Text style={[styles.title, { color: theme.text }]}>{item.title}</Text>
+        <Text style={[styles.text, { color: theme.textSecondary }]}>{item.text}</Text>
       </View>
     );
   };
 
   // Botón Final
   const renderDoneButton = () => (
-    <View style={styles.buttonDone}>
-      <Text style={styles.buttonText}>Empezar</Text>
+    <View style={[styles.buttonDone, { backgroundColor: theme.primary }]}>
+      <Text style={[styles.buttonText, { color: theme.background }]}>Empezar</Text>
     </View>
   );
 
   // Botón Siguiente
   const renderNextButton = () => (
     <View style={styles.buttonNext}>
-      <Text style={styles.buttonNextText}>Siguiente</Text>
+      <Text style={[styles.buttonNextText, { color: theme.primary }]}>Siguiente</Text>
     </View>
   );
 
   // Botón Omitir
   const renderSkipButton = () => (
     <View style={styles.buttonSkip}>
-      <Text style={styles.buttonSkipText}>Omitir</Text>
+      <Text style={[styles.buttonSkipText, { color: theme.textSecondary }]}>Omitir</Text>
     </View>
   );
 
   return (
     // 🔹 EL SECRETO ESTÁ AQUÍ: Envolver el Slider en un View con el color de fondo oscuro
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <AppIntroSlider
         ref={sliderRef} // 🔹 Agregamos la referencia
         renderItem={renderItem}
@@ -96,8 +98,8 @@ export default function OnboardingScreen({ onFinish }) {
         scrollEnabled={false} // Deshabilita el deslizamiento con el dedo
         dotClickEnabled={false} // Deshabilita saltar pantallas tocando los puntos
         // Estilos de los puntos
-        activeDotStyle={{ backgroundColor: "#38BDF8", width: 10 }}
-        dotStyle={{ backgroundColor: "#334155" }}
+        activeDotStyle={{ backgroundColor: theme.primary, width: 10 }}
+        dotStyle={{ backgroundColor: theme.cardSecondary }}
         // Optimizaciones de renderizado
         keyExtractor={(item) => item.key}
       />
@@ -108,13 +110,11 @@ export default function OnboardingScreen({ onFinish }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A", // 🔹 Fondo global oscuro para matar el blanco
   },
   slide: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent", // 🔹 Transparente para que tome el fondo del container
     paddingHorizontal: 30,
     paddingTop: 80, // 🔹 Espacio extra abajo para que el texto no choque con los botones
   },
@@ -128,27 +128,23 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    color: "white",
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
   },
   text: {
     fontSize: 16,
-    color: "#94A3B8",
     textAlign: "center",
     lineHeight: 24,
   },
 
   // Estilos de los Botones
   buttonDone: {
-    backgroundColor: "#38BDF8",
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 20,
   },
   buttonText: {
-    color: "#0F172A",
     fontWeight: "bold",
   },
   buttonNext: {
@@ -156,7 +152,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   buttonNextText: {
-    color: "#38BDF8",
     fontWeight: "600",
     fontSize: 16,
   },
@@ -165,7 +160,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   buttonSkipText: {
-    color: "#94A3B8", // Un color más sutil para "omitir"
     fontWeight: "600",
     fontSize: 16,
   },

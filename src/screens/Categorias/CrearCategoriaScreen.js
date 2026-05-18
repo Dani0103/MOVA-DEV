@@ -15,6 +15,7 @@ import { TRANSACTION_TYPES } from "../../constants/transactionTypes";
 import { useAuth } from "../../context/AuthContext";
 import { createCategory } from "../../services/CategoriaService";
 import { useCategories } from "../../context/CategoryContext";
+import { useTheme } from "../../theme/useTheme";
 
 // Colores consistentes con CrearCuenta
 const COLORES_DISPONIBLES = [
@@ -48,6 +49,7 @@ const ICONOS_DISPONIBLES = [
 ];
 
 export default function CrearCategoriaScreen() {
+  const theme = useTheme();
   const navigation = useNavigation();
   const { token, user } = useAuth();
   const { refreshCategories } = useCategories();
@@ -105,35 +107,36 @@ export default function CrearCategoriaScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>Nueva Categoría</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
+      <Text style={[styles.title, { color: theme.text }]}>Nueva Categoría</Text>
 
       {/* Vista Previa */}
-      <View style={styles.previewContainer}>
+      <View style={[styles.previewContainer, { backgroundColor: theme.card }]}>
         <View
           style={[styles.iconCircle, { backgroundColor: colorSelected + "20" }]}
         >
           <Ionicons name={iconSelected} size={40} color={colorSelected} />
         </View>
-        <Text style={styles.previewText}>{nombre || "Nombre categoría"}</Text>
+        <Text style={[styles.previewText, { color: theme.text }]}>{nombre || "Nombre categoría"}</Text>
       </View>
 
-      <Text style={styles.label}>Nombre</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Nombre</Text>
       <TextInput
         placeholder="Ej: Gimnasio, Freelance..."
-        placeholderTextColor="#64748B"
-        style={styles.input}
+        placeholderTextColor={theme.placeholder}
+        style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         value={nombre}
         onChangeText={setNombre}
       />
 
-      <Text style={styles.label}>Tipo</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Tipo</Text>
       <View style={styles.selectorContainer}>
         {TRANSACTION_TYPES.map((item) => (
           <TouchableOpacity
             key={item.id}
             style={[
               styles.selectorButton,
+              { backgroundColor: theme.card },
               tipo === item.id && {
                 borderColor: item.color,
                 backgroundColor: item.color + "15",
@@ -144,6 +147,7 @@ export default function CrearCategoriaScreen() {
             <Text
               style={[
                 styles.selectorText,
+                { color: theme.textSecondary },
                 tipo === item.id && { color: item.color },
               ]}
             >
@@ -153,7 +157,7 @@ export default function CrearCategoriaScreen() {
         ))}
       </View>
 
-      <Text style={styles.label}>Icono</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Icono</Text>
       <View style={styles.gridContainer}>
         {ICONOS_DISPONIBLES.map((icon) => (
           <TouchableOpacity
@@ -161,8 +165,9 @@ export default function CrearCategoriaScreen() {
             onPress={() => setIconSelected(icon)}
             style={[
               styles.gridItem,
+              { backgroundColor: theme.card },
               iconSelected === icon && {
-                backgroundColor: "#1E293B",
+                backgroundColor: theme.card,
                 borderColor: colorSelected,
                 borderWidth: 1,
               },
@@ -171,13 +176,13 @@ export default function CrearCategoriaScreen() {
             <Ionicons
               name={icon}
               size={24}
-              color={iconSelected === icon ? colorSelected : "#64748B"}
+              color={iconSelected === icon ? colorSelected : theme.textMuted}
             />
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={styles.label}>Color</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>Color</Text>
       <View style={styles.gridContainer}>
         {COLORES_DISPONIBLES.map((color) => (
           <TouchableOpacity
@@ -198,21 +203,21 @@ export default function CrearCategoriaScreen() {
 
       <View style={styles.buttonRow}>
         <TouchableOpacity
-          style={styles.secondaryButton}
+          style={[styles.secondaryButton, { backgroundColor: theme.card }]}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.secondaryText}>Cancelar</Text>
+          <Text style={[styles.secondaryText, { color: theme.textSecondary }]}>Cancelar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.primary }]}
           onPress={handleGuardar}
           disabled={submitting}
         >
           {submitting ? (
-            <ActivityIndicator color="#0F172A" />
+            <ActivityIndicator color={theme.background} />
           ) : (
-            <Text style={styles.buttonText}>Guardar</Text>
+            <Text style={[styles.buttonText, { color: theme.background }]}>Guardar</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -221,12 +226,11 @@ export default function CrearCategoriaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0F172A", padding: 20 },
-  title: { color: "white", fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   previewContainer: {
     alignItems: "center",
     marginVertical: 20,
-    backgroundColor: "#1E293B",
     padding: 20,
     borderRadius: 20,
   },
@@ -238,30 +242,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  previewText: { color: "white", fontSize: 18, fontWeight: "600" },
+  previewText: { fontSize: 18, fontWeight: "600" },
   label: {
-    color: "#94A3B8",
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 10,
     marginTop: 15,
   },
   input: {
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 12,
-    color: "white",
     fontSize: 16,
   },
   selectorContainer: { flexDirection: "row", gap: 10 },
   selectorButton: {
     flex: 1,
     paddingVertical: 12,
-    backgroundColor: "#1E293B",
     borderRadius: 12,
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
   },
-  selectorText: { color: "#94A3B8", fontWeight: "600" },
+  selectorText: { fontWeight: "600" },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -271,7 +273,6 @@ const styles = StyleSheet.create({
   gridItem: {
     width: 50,
     height: 50,
-    backgroundColor: "#1E293B",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
@@ -287,27 +288,16 @@ const styles = StyleSheet.create({
   buttonRow: { flexDirection: "row", gap: 12, marginTop: 30, marginBottom: 50 },
   button: {
     flex: 1,
-    backgroundColor: "#38BDF8",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
   },
-  buttonText: { fontWeight: "bold", color: "#0F172A", fontSize: 16 },
+  buttonText: { fontWeight: "bold", fontSize: 16 },
   secondaryButton: {
     flex: 1,
-    backgroundColor: "#1E293B",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
   },
-  secondaryText: { color: "#94A3B8", fontWeight: "600", fontSize: 16 },
-  selectorButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderRadius: 12,
-    backgroundColor: "#1E293B",
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
+  secondaryText: { fontWeight: "600", fontSize: 16 },
 });

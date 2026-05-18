@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import MovimientosScreen from "../screens/Movimientos/MovimientosScreen";
 import CrearMovimientoScreen from "../screens/Movimientos/CrearMovimientoScreen";
+import DetalleMovimientoScreen from "../screens/Movimientos/DetalleMovimientoScreen";
 import { useAuth } from "../context/AuthContext";
 import { useAccounts } from "../context/AccountContext";
 import { loadMovimientos } from "../services/MovimientosService";
@@ -65,7 +66,8 @@ export default function MovimientosStack() {
             {...props}
             movimientos={movimientos}
             loading={loading}
-            // 🔹 4. Le pasamos cargarTodo(true) al pull-to-refresh
+            categorias={categorias}
+            cuentas={cuentas}
             onRefresh={() => cargarTodo(true)}
           />
         )}
@@ -85,6 +87,8 @@ export default function MovimientosStack() {
           />
         )}
       </Stack.Screen>
+
+      <Stack.Screen name="DetalleMovimiento" component={DetalleMovimientoScreen} />
     </Stack.Navigator>
   );
 }

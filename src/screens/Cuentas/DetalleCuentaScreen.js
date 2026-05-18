@@ -10,8 +10,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { universalAlert } from "../../utils/universalAlert"; // Asumiendo que usas este utilitario
 import { ArchiveAccount } from "../../services/CuentaService";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../theme/useTheme";
 
 export default function DetalleCuentaScreen() {
+  const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const { token } = useAuth();
@@ -53,7 +55,7 @@ export default function DetalleCuentaScreen() {
           onPress: () => {
             console.log("Cuenta archivada:", cuenta.id);
 
-            ArchiveAccount(cuenta.nombre, token);
+            ArchiveAccount(cuenta.id, token);
           },
         },
       ],
@@ -61,67 +63,68 @@ export default function DetalleCuentaScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={styles.container}>
         {/* TopBar */}
         <View style={styles.topBar}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.backBtn}
+            style={[styles.backBtn, { backgroundColor: theme.card }]}
           >
-            <Ionicons name="arrow-back" size={22} color="white" />
+            <Ionicons name="arrow-back" size={22} color={theme.text} />
           </TouchableOpacity>
-          <Text style={styles.topTitle}>Detalle de cuenta</Text>
+          <Text style={[styles.topTitle, { color: theme.text }]}>Detalle de cuenta</Text>
 
           {/* Botón de Editar en la TopBar */}
-          {/* <TouchableOpacity onPress={handleEditar} style={styles.editBtnTop}>
+          <TouchableOpacity onPress={handleEditar} style={[styles.editBtnTop, { borderColor: theme.border }]}>
             <Ionicons name="pencil" size={18} color="#38BDF8" />
             <Text style={styles.editText}>Editar</Text>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
         </View>
 
         {/* Card principal con color dinámico */}
         <View
           style={[
             styles.balanceCard,
+            { backgroundColor: theme.card },
             {
-              borderTopColor: cuenta.color_hex || "#38BDF8",
+              borderTopColor: cuenta.color_hex || theme.primary,
               borderTopWidth: 4,
             },
           ]}
         >
           <View style={styles.cardHeader}>
             <View>
-              <Text style={styles.accountName}>{cuenta.nombre}</Text>
-              <Text style={styles.accountType}>
+              <Text style={[styles.accountName, { color: theme.text }]}>{cuenta.nombre}</Text>
+              <Text style={[styles.accountType, { color: theme.textSecondary }]}>
                 {cuenta.tipo_cuenta?.nombre || "General"}
               </Text>
             </View>
           </View>
 
-          <Text style={styles.balanceLabel}>Saldo Disponible</Text>
+          <Text style={[styles.balanceLabel, { color: theme.textSecondary }]}>Saldo Disponible</Text>
           <View style={styles.balanceRow}>
-            <Text style={styles.balance}>
+            <Text style={[styles.balance, { color: theme.text }]}>
               {cuenta.moneda?.simbolo || "$"}{" "}
               {parseFloat(cuenta.saldo_actual).toLocaleString()}
             </Text>
-            <Text style={styles.currencyBadge}>{cuenta.moneda?.codigo}</Text>
+            <Text style={[styles.currencyBadge, { color: theme.primary }]}>{cuenta.moneda?.codigo}</Text>
           </View>
         </View>
 
         {/* Resumen mensual */}
         <View style={styles.summaryRow}>
-          <View style={styles.incomeCard}>
+          <View style={[styles.incomeCard, { backgroundColor: theme.card }]}>
             <Ionicons name="trending-up" size={16} color="#4ADE80" />
-            <Text style={styles.summaryTitle}>Ingresos</Text>
+            <Text style={[styles.summaryTitle, { color: theme.textSecondary }]}>Ingresos</Text>
             <Text style={styles.income}>
               + {cuenta.moneda?.simbolo} {ingresos.toLocaleString()}
             </Text>
           </View>
 
-          <View style={styles.expenseCard}>
+          <View style={[styles.expenseCard, { backgroundColor: theme.card }]}>
             <Ionicons name="trending-down" size={16} color="#F87171" />
-            <Text style={styles.summaryTitle}>Gastos</Text>
+            <Text style={[styles.summaryTitle, { color: theme.textSecondary }]}>Gastos</Text>
             <Text style={styles.expense}>
               - {cuenta.moneda?.simbolo} {gastos.toLocaleString()}
             </Text>
@@ -130,17 +133,17 @@ export default function DetalleCuentaScreen() {
 
         {/* Movimientos */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Movimientos recientes</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Movimientos recientes</Text>
           {movimientos.length > 0 && (
             <TouchableOpacity>
-              <Text style={styles.viewAll}>Ver todo</Text>
+              <Text style={[styles.viewAll, { color: theme.primary }]}>Ver todo</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {movimientos.length > 0 ? (
           movimientos.map((mov) => (
-            <View key={mov.id} style={styles.transaction}>
+            <View key={mov.id} style={[styles.transaction, { backgroundColor: theme.card }]}>
               <View style={styles.transactionIcon}>
                 <Ionicons
                   name={
@@ -153,8 +156,8 @@ export default function DetalleCuentaScreen() {
                 />
               </View>
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.transactionText}>{mov.descripcion}</Text>
-                <Text style={styles.transactionDate}>Hoy, 10:30 AM</Text>
+                <Text style={[styles.transactionText, { color: theme.text }]}>{mov.descripcion}</Text>
+                <Text style={[styles.transactionDate, { color: theme.textMuted }]}>Hoy, 10:30 AM</Text>
               </View>
 
               <Text
@@ -167,9 +170,9 @@ export default function DetalleCuentaScreen() {
             </View>
           ))
         ) : (
-          <View style={styles.emptyTransactionsContainer}>
-            <Ionicons name="receipt-outline" size={40} color="#1E293B" />
-            <Text style={styles.emptyTransactionsText}>
+          <View style={[styles.emptyTransactionsContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Ionicons name="receipt-outline" size={40} color={theme.card} />
+            <Text style={[styles.emptyTransactionsText, { color: theme.textMuted }]}>
               Aún no hay movimientos en esta cuenta.
             </Text>
           </View>
@@ -178,10 +181,10 @@ export default function DetalleCuentaScreen() {
         {/* --- NUEVO: Espaciador y Botón Archivar al final --- */}
         <View style={{ height: 30 }} />
 
-        {/* <TouchableOpacity style={styles.archiveBtn} onPress={handleArchivar}>
+        <TouchableOpacity style={styles.archiveBtn} onPress={handleArchivar}>
           <Ionicons name="archive-outline" size={20} color="#F87171" />
           <Text style={styles.archiveText}>Archivar Cuenta</Text>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
         <View style={{ height: 40 }} />
         {/* --------------------------------------------------- */}
@@ -205,19 +208,16 @@ const styles = StyleSheet.create({
   backBtn: {
     padding: 8,
     borderRadius: 12,
-    backgroundColor: "#1E293B",
   },
   // NUEVOS ESTILOS PARA LOS BOTONES
   editBtnTop: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E293B",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 10,
     gap: 5,
     borderWidth: 1,
-    borderColor: "#334155",
   },
   editText: {
     color: "#38BDF8",
@@ -243,12 +243,10 @@ const styles = StyleSheet.create({
   },
   // ESTILOS ANTERIORES
   topTitle: {
-    color: "white",
     fontSize: 18,
     fontWeight: "700",
   },
   balanceCard: {
-    backgroundColor: "#1E293B",
     padding: 24,
     borderRadius: 20,
     marginBottom: 20,
@@ -264,16 +262,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   accountName: {
-    color: "white",
     fontSize: 22,
     fontWeight: "bold",
   },
   accountType: {
-    color: "#94A3B8",
     fontSize: 14,
   },
   balanceLabel: {
-    color: "#94A3B8",
     fontSize: 12,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -287,10 +282,8 @@ const styles = StyleSheet.create({
   balance: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "white",
   },
   currencyBadge: {
-    color: "#38BDF8",
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -300,7 +293,6 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   incomeCard: {
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 16,
     width: "48%",
@@ -308,7 +300,6 @@ const styles = StyleSheet.create({
     borderLeftColor: "#4ADE80",
   },
   expenseCard: {
-    backgroundColor: "#1E293B",
     padding: 15,
     borderRadius: 16,
     width: "48%",
@@ -316,7 +307,6 @@ const styles = StyleSheet.create({
     borderLeftColor: "#F87171",
   },
   summaryTitle: {
-    color: "#94A3B8",
     fontSize: 12,
     marginTop: 5,
   },
@@ -339,16 +329,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sectionTitle: {
-    color: "white",
     fontSize: 18,
     fontWeight: "700",
   },
   viewAll: {
-    color: "#38BDF8",
     fontSize: 14,
   },
   transaction: {
-    backgroundColor: "#1E293B",
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -356,27 +343,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   transactionText: {
-    color: "white",
     fontWeight: "600",
     fontSize: 15,
   },
   transactionDate: {
-    color: "#64748B",
     fontSize: 12,
     marginTop: 2,
   },
   emptyTransactionsContainer: {
-    backgroundColor: "#1E293B",
     padding: 30,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderStyle: "dashed",
     borderWidth: 1,
-    borderColor: "#334155",
   },
   emptyTransactionsText: {
-    color: "#64748B",
     fontSize: 14,
     marginTop: 10,
     textAlign: "center",

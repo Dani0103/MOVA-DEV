@@ -32,3 +32,25 @@ export async function createCategory(formDataCategorias, token) {
     body: JSON.stringify(body),
   });
 }
+
+export async function updateCategory(id, data, token) {
+  return await apiFetch(`/categorias/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCategory(id, token) {
+  return await apiFetch(`/categorias/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+}

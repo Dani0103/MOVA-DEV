@@ -41,7 +41,7 @@ export async function updateAccount(cuenta, formData, token) {
     nombre: formData.nombre,
     tipo_cuenta_id: formData.tipo_cuenta_id,
     moneda_id: formData.moneda_id,
-    saldo_inicial: formData.saldo, // Tu backend usa 'saldo_inicial'
+    saldo_actual: formData.saldo_actual, // El backend usa 'saldo_actual' en update
     color_hex: formData.color_hex || "#38BDF8", // Valor por defecto si no viene uno
     activa: true,
   };
