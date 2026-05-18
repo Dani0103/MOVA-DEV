@@ -45,12 +45,16 @@ export default function InfoPersonal() {
     }
     try {
       setSaving(true);
-      const res = await updateProfile(token, {
+      await updateProfile(token, {
         nombre: editNombre.trim(),
         apellido: editApellido.trim() || undefined,
       });
-      const updatedUser = res?.data ?? res;
-      await updateUser(updatedUser);
+      // Actualizar contexto directamente con los valores del formulario
+      await updateUser({
+        nombre: editNombre.trim(),
+        apellido: editApellido.trim(),
+      });
+      // Cerrar modal primero para que el cambio sea visible de inmediato
       setEditVisible(false);
       universalAlert("¡Perfil actualizado!", "Tus datos se guardaron correctamente.");
     } catch (e) {
