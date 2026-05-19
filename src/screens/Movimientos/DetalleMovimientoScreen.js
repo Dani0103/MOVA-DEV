@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme/useTheme";
@@ -51,17 +51,33 @@ export default function DetalleMovimientoScreen() {
   const route = useRoute();
   const { token } = useAuth();
 
-  const { movimiento: initialMovimiento } = route.params;
-  const [movimiento, setMovimiento] = useState(initialMovimiento);
+  // route.params.movimiento puede llegar después si la pantalla ya estaba montada
+  // (React Navigation reutiliza el componente sin desmontar si ya está en el stack)
+  const { movimiento: initialMovimiento } = route.params ?? {};
+  const [movimiento, setMovimiento] = useState(initialMovimiento ?? {});
 
   const [editVisible, setEditVisible] = useState(false);
-  const [descripcion, setDescripcion] = useState(movimiento.descripcion || "");
-  const [monto, setMonto] = useState(String(movimiento.monto || ""));
+  const [descripcion, setDescripcion] = useState(initialMovimiento?.descripcion || "");
+  const [monto, setMonto] = useState(String(initialMovimiento?.monto || ""));
   const [fecha, setFecha] = useState(
-    movimiento.fecha
-      ? movimiento.fecha.split("T")[0]
+    initialMovimiento?.fecha
+      ? initialMovimiento.fecha.split("T")[0]
       : new Date().toISOString().split("T")[0]
   );
+
+  // Sincronizar estado local cuando lleguen params nuevos.
+  // Ocurre cuando la pantalla ya estaba en el stack (React Navigation reutiliza el
+  // componente sin desmontar) y se navega a ella con otro movimiento.
+  // Usamos `_ts` como dependencia extra para que también se dispare cuando se
+  // navega al MISMO movimiento desde HomeScreen (p.ej. después de editar).
+  useEffect(() => {
+    const mov = route.params?.movimiento;
+    if (!mov) return;
+    setMovimiento(mov);
+    setDescripcion(mov.descripcion || "");
+    setMonto(String(mov.monto || ""));
+    setFecha(mov.fecha ? mov.fecha.split("T")[0] : new Date().toISOString().split("T")[0]);
+  }, [route.params?.movimiento?.id, route.params?._ts]);
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);

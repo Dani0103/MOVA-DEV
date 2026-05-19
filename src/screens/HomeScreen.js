@@ -153,7 +153,9 @@ export default function HomeScreen() {
                   activeOpacity={0.85}
                   onPress={() => navigation.navigate("Movimientos", {
                     screen: "DetalleMovimiento",
-                    params: { movimiento: item },
+                    // timestamp fuerza a React Navigation a detectar el cambio de params
+                    // aunque el componente ya estuviera montado en el stack
+                    params: { movimiento: item, _ts: Date.now() },
                   })}
                 >
                   {/* Icono con color de categoría */}
