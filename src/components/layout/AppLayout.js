@@ -59,7 +59,19 @@ export default function AppLayout({ navigation }) {
         />
         <Drawer.Screen name="Cuentas" component={CuentasStack} />
         <Drawer.Screen name="Categorias" component={CategoriasStack} />
-        <Drawer.Screen name="Movimientos" component={MovimientosStack} />
+        <Drawer.Screen
+          name="Movimientos"
+          component={MovimientosStack}
+          listeners={({ navigation }) => ({
+            // Cuando el usuario toca "Movimientos" en el drawer,
+            // reseteamos el stack interno para que siempre muestre
+            // la lista, sin importar si antes estaba en DetalleMovimiento.
+            drawerItemPress: (e) => {
+              e.preventDefault();
+              navigation.navigate("Movimientos", { screen: "Movimientos" });
+            },
+          })}
+        />
         <Drawer.Screen name="Presupuestos" component={PresupuestosStack} />
         <Drawer.Screen name="Recurrentes" component={RecurrentesStack} />
 
