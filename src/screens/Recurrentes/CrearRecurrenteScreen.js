@@ -17,6 +17,8 @@ import { useAccounts } from "../../context/AccountContext";
 import { useCategories } from "../../context/CategoryContext";
 import DatePickerInput from "../../components/ui/DatePickerInput";
 import { useTheme } from "../../theme/useTheme";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay } from "../../utils/moneyFormatter";
 
 const TIPO_OPTIONS = [
   { value: "gasto", label: "Gasto", color: "#F87171" },
@@ -54,7 +56,7 @@ function getTodayString() {
 export default function CrearRecurrenteScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { cuentas, refreshAccounts } = useAccounts();
   const { categorias, refreshCategories } = useCategories();
 
@@ -88,7 +90,7 @@ export default function CrearRecurrenteScreen() {
   const filteredCategories = categorias.filter((c) => c.tipo === tipo);
 
   const handleGuardar = async () => {
-    if (!monto || isNaN(parseFloat(monto)) || parseFloat(monto) <= 0) {
+    if (!monto || parseMoneyDisplay(monto, user?.moneda) <= 0) {
       universalAlert("Error", "El monto es obligatorio y debe ser mayor a 0.");
       return;
     }
@@ -116,7 +118,7 @@ export default function CrearRecurrenteScreen() {
       await createRecurrente(token, {
         cuenta_id: cuentaId,
         categoria_id: categoriaId,
-        monto,
+        monto: parseMoneyDisplay(monto, user?.moneda),
         tipo,
         frecuencia,
         dia_ejecucion:
@@ -162,10 +164,9 @@ export default function CrearRecurrenteScreen() {
       {/* Monto — big numeric input */}
       <View style={[styles.montoContainer, { backgroundColor: theme.card }]}>
         <Text style={[styles.montoSymbol, { color: tipoColor }]}>$</Text>
-        <TextInput
+        <MoneyInput
           placeholder="0.00"
           placeholderTextColor={theme.placeholder}
-          keyboardType="numeric"
           style={[styles.montoInput, { color: tipoColor }]}
           value={monto}
           onChangeText={setMonto}

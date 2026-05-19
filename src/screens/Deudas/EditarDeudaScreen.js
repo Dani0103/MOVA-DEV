@@ -15,6 +15,8 @@ import { useAuth } from "../../context/AuthContext";
 import { updateDeuda } from "../../services/DeudaService";
 import { universalAlert } from "../../utils/universalAlert";
 import DatePickerInput from "../../components/ui/DatePickerInput";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay, formatMoneyNumber } from "../../utils/moneyFormatter";
 
 const COLORES_DEUDA = ["#F87171", "#FB923C", "#FACC15", "#4ADE80", "#38BDF8", "#A78BFA"];
 const ICONOS_DEUDA = [
@@ -37,12 +39,13 @@ export default function EditarDeudaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const { deuda } = route.params;
 
   const [acreedor, setAcreedor] = useState(deuda.acreedor ?? "");
-  const [montoTotal, setMontoTotal] = useState(String(deuda.monto_total ?? ""));
+  const [montoTotal, setMontoTotal] = useState(formatMoneyNumber(deuda.monto_total, user?.moneda));
+  const [montoTotalValue, setMontoTotalValue] = useState(parseFloat(deuda.monto_total) || 0);
   const [tasaInteres, setTasaInteres] = useState(
     deuda.tasa_interes != null ? String(deuda.tasa_interes) : ""
   );
@@ -58,8 +61,8 @@ export default function EditarDeudaScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const cuotaMensual = useMemo(
-    () => calcCuotaMensual(montoTotal, tasaInteres, numeroCuotas),
-    [montoTotal, tasaInteres, numeroCuotas]
+    () => calcCuotaMensual(montoTotalValue, tasaInteres, numeroCuotas),
+    [montoTotalValue, tasaInteres, numeroCuotas]
   );
 
   const fmt = (n) =>
@@ -70,7 +73,7 @@ export default function EditarDeudaScreen() {
       universalAlert("Error", "Ingresa el nombre del acreedor.");
       return;
     }
-    if (!montoTotal || parseFloat(montoTotal) <= 0) {
+    if (!montoTotal || montoTotalValue <= 0) {
       universalAlert("Error", "Ingresa un monto válido mayor a 0.");
       return;
     }
@@ -80,7 +83,7 @@ export default function EditarDeudaScreen() {
       await updateDeuda(token, deuda.id, {
         acreedor: acreedor.trim(),
         descripcion: descripcion.trim() || null,
-        monto_total: parseFloat(montoTotal),
+        monto_total: montoTotalValue,
         tasa_interes_anual: tasaInteres ? parseFloat(tasaInteres) : null,
         numero_cuotas: numeroCuotas ? parseInt(numeroCuotas) : null,
         fecha_inicio: fechaInicio || null,
@@ -123,7 +126,7 @@ export default function EditarDeudaScreen() {
         </View>
         <Text style={[styles.previewTitle, { color: theme.text }]}>{acreedor || "Acreedor"}</Text>
         <Text style={[styles.previewAmount, { color: colorSelected }]}>
-          $ {fmt(parseFloat(montoTotal) || 0)}
+          $ {fmt(montoTotalValue || 0)}
         </Text>
 
         {cuotaMensual !== null && (
@@ -148,13 +151,13 @@ export default function EditarDeudaScreen() {
 
       {/* Monto total */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Total</Text>
-      <TextInput
+      <MoneyInput
         style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         placeholder="0"
         placeholderTextColor={theme.textMuted}
-        keyboardType="numeric"
         value={montoTotal}
         onChangeText={setMontoTotal}
+        onChangeValue={setMontoTotalValue}
       />
 
       {/* Tasa + Cuotas */}

@@ -15,18 +15,20 @@ import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
 import { registrarPago } from "../../services/DeudaService";
 import { useTheme } from "../../theme/useTheme";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay, formatMoneyNumber } from "../../utils/moneyFormatter";
 
 export default function AddPagoDeudaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { cuentas } = useAccounts();
 
   const { deuda } = route.params;
   // Pre-fill with cuota_mensual if available
   const cuotaDefault = deuda.cuota_mensual
-    ? String(Math.round(deuda.cuota_mensual))
+    ? formatMoneyNumber(Math.round(deuda.cuota_mensual), user?.moneda)
     : "";
   const [monto, setMonto] = useState(cuotaDefault);
   const [nota, setNota] = useState("");
@@ -36,7 +38,7 @@ export default function AddPagoDeudaScreen() {
   const saldoPendiente = deuda.saldo_pendiente;
 
   const handleConfirmarPago = async () => {
-    const montoNum = parseFloat(monto);
+    const montoNum = parseMoneyDisplay(monto, user?.moneda);
 
     if (!monto || montoNum <= 0) {
       universalAlert("Error", "Ingresa un monto válido para el pago.");
@@ -53,7 +55,7 @@ export default function AddPagoDeudaScreen() {
 
     try {
       setSubmitting(true);
-      await registrarPago(token, deuda.id, { monto, nota });
+      await registrarPago(token, deuda.id, { monto: montoNum, nota });
       universalAlert(
         "¡Pago Registrado!",
         `Abonaste $${montoNum.toLocaleString("es-CO")} a "${deuda.acreedor}".`,
@@ -122,11 +124,10 @@ export default function AddPagoDeudaScreen() {
         {/* Input Monto */}
         <View style={styles.amountSection}>
           <Text style={[styles.currencySymbol, { color: theme.text }]}>$</Text>
-          <TextInput
+          <MoneyInput
             style={[styles.amountInput, { color: theme.text }]}
             placeholder="0"
             placeholderTextColor={theme.cardSecondary}
-            keyboardType="numeric"
             value={monto}
             onChangeText={setMonto}
             autoFocus

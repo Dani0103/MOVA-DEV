@@ -14,6 +14,8 @@ import { useTheme } from "../../theme/useTheme";
 import { useAuth } from "../../context/AuthContext";
 import { createDeuda } from "../../services/DeudaService";
 import { universalAlert } from "../../utils/universalAlert";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay } from "../../utils/moneyFormatter";
 
 const COLORES_DEUDA = ["#F87171", "#FB923C", "#FACC15", "#4ADE80", "#38BDF8", "#A78BFA"];
 const ICONOS_DEUDA = [
@@ -38,10 +40,11 @@ function calcCuotaMensual(montoTotal, tasaAnual, numeroCuotas) {
 export default function CrearDeudaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [acreedor, setAcreedor] = useState("");
   const [montoTotal, setMontoTotal] = useState("");
+  const [montoTotalValue, setMontoTotalValue] = useState(0);
   const [tasaInteres, setTasaInteres] = useState("");
   const [numeroCuotas, setNumeroCuotas] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
@@ -52,8 +55,8 @@ export default function CrearDeudaScreen() {
 
   // Cálculo en tiempo real de cuota mensual
   const cuotaMensual = useMemo(
-    () => calcCuotaMensual(montoTotal, tasaInteres, numeroCuotas),
-    [montoTotal, tasaInteres, numeroCuotas]
+    () => calcCuotaMensual(montoTotalValue, tasaInteres, numeroCuotas),
+    [montoTotalValue, tasaInteres, numeroCuotas]
   );
 
   const totalAPagar = cuotaMensual !== null && parseInt(numeroCuotas) > 0
@@ -61,7 +64,7 @@ export default function CrearDeudaScreen() {
     : null;
 
   const totalIntereses = totalAPagar !== null
-    ? totalAPagar - (parseFloat(montoTotal) || 0)
+    ? totalAPagar - (montoTotalValue || 0)
     : null;
 
   const handleGuardar = async () => {
@@ -69,7 +72,7 @@ export default function CrearDeudaScreen() {
       universalAlert("Error", "Ingresa el nombre del acreedor.");
       return;
     }
-    if (!montoTotal || parseFloat(montoTotal) <= 0) {
+    if (!montoTotal || montoTotalValue <= 0) {
       universalAlert("Error", "Ingresa un monto válido mayor a 0.");
       return;
     }
@@ -79,7 +82,7 @@ export default function CrearDeudaScreen() {
       await createDeuda(token, {
         acreedor: acreedor.trim(),
         descripcion: descripcion.trim() || null,
-        monto_total: montoTotal,
+        monto_total: montoTotalValue,
         tasa_interes_anual: tasaInteres || null,
         numero_cuotas: numeroCuotas || null,
         fecha_inicio: fechaInicio || null,
@@ -124,7 +127,7 @@ export default function CrearDeudaScreen() {
         </View>
         <Text style={[styles.previewTitle, { color: theme.text }]}>{acreedor || "Acreedor"}</Text>
         <Text style={[styles.previewAmount, { color: colorSelected }]}>
-          $ {fmt(parseFloat(montoTotal) || 0)}
+          $ {fmt(montoTotalValue || 0)}
         </Text>
 
         {/* Cuota preview inline */}
@@ -170,13 +173,13 @@ export default function CrearDeudaScreen() {
 
       {/* Monto Total */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Total</Text>
-      <TextInput
+      <MoneyInput
         style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         placeholder="0"
         placeholderTextColor={theme.textMuted}
-        keyboardType="numeric"
         value={montoTotal}
         onChangeText={setMontoTotal}
+        onChangeValue={setMontoTotalValue}
       />
 
       {/* Tasa + Cuotas en fila */}

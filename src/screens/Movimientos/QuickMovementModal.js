@@ -17,6 +17,8 @@ import { createMovimiento } from "../../services/MovimientosService";
 import { TypeMovement } from "../../services/CatalogoService";
 import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay } from "../../utils/moneyFormatter";
 
 const SkeletonBox = ({ style }) => (
   <View style={[{ backgroundColor: "#1E293B", borderRadius: 12 }, style]} />
@@ -31,7 +33,7 @@ export default function QuickMovementModal({
   loadingCategorias = false,
   onSuccess,
 }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // Estados del Formulario
   const [step, setStep] = useState(1);
@@ -80,40 +82,10 @@ export default function QuickMovementModal({
     }
   };
 
-  // 🔹 Función para el formateo visual (Mantiene el estado con comas)
-  const handleMontoChange = (text) => {
-    // 1. Quitamos todo lo que no sea número o punto
-    let rawValue = text.replace(/[^0-9.]/g, "");
-
-    // 2. Evitamos múltiples puntos decimales
-    const parts = rawValue.split(".");
-    if (parts.length > 2) {
-      rawValue = parts[0] + "." + parts.slice(1).join("");
-    }
-
-    // 3. Separamos parte entera de decimal
-    const [integerPart, decimalPart] = rawValue.split(".");
-
-    // 4. Formateamos la parte entera con comas
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
-    // 5. Recomponemos: si hay punto, lo mantenemos; si hay decimales, también.
-    const finalValue =
-      decimalPart !== undefined
-        ? `${formattedInteger}.${decimalPart}`
-        : rawValue.includes(".")
-          ? `${formattedInteger}.`
-          : formattedInteger;
-
-    setMonto(finalValue);
-  };
-
   const handleFinish = async () => {
     setSubmitting(true);
 
-    // 1. QUITAMOS LAS COMAS: "1,250.50" -> "1250.50"
-    const montoSinComas = monto.replace(/,/g, "");
-    const montoNum = parseFloat(montoSinComas);
+    const montoNum = parseMoneyDisplay(monto, user?.moneda);
 
     // Validación de seguridad
     if (isNaN(montoNum) || montoNum <= 0) {
@@ -172,8 +144,7 @@ export default function QuickMovementModal({
     }
   };
 
-  const montoLimpio = monto.replace(/,/g, "");
-  const esMontoInvalido = !montoLimpio || parseFloat(montoLimpio) <= 0;
+  const esMontoInvalido = !monto || parseMoneyDisplay(monto, user?.moneda) <= 0;
 
   const isStepInvalid =
     (step === 1 && esMontoInvalido) ||
@@ -206,18 +177,16 @@ export default function QuickMovementModal({
                 <Text style={styles.stepLabel}>¿Cuánto dinero?</Text>
                 <View style={styles.montoBigContainer}>
                   <Text style={styles.montoSymbol}>$</Text>
-                  <TextInput
+                  <MoneyInput
                     autoFocus
                     placeholder="0"
                     placeholderTextColor="#334155"
-                    keyboardType="decimal-pad"
                     style={styles.hugeInput}
                     value={monto}
-                    onChangeText={handleMontoChange}
-                    // 🔹 Propiedades para evitar el desborde:
-                    adjustsFontSizeToFit={true} // Reduce el tamaño si no cabe
-                    minimumFontScale={0.5} // El tamaño mínimo será el 50% del original
-                    numberOfLines={1} // Obliga a que no salte de línea
+                    onChangeText={setMonto}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.5}
+                    numberOfLines={1}
                   />
                 </View>
               </View>

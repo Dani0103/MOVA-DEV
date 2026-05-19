@@ -18,6 +18,8 @@ import { useAuth } from "../../context/AuthContext";
 import { editMovimiento, deleteMovimiento } from "../../services/MovimientosService";
 import { universalAlert } from "../../utils/universalAlert";
 import DatePickerInput from "../../components/ui/DatePickerInput";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay, formatMoneyNumber } from "../../utils/moneyFormatter";
 
 function tipoColor(tipo) {
   if (tipo === "ingreso") return "#4ADE80";
@@ -49,7 +51,7 @@ export default function DetalleMovimientoScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // route.params.movimiento puede llegar después si la pantalla ya estaba montada
   // (React Navigation reutiliza el componente sin desmontar si ya está en el stack)
@@ -58,7 +60,7 @@ export default function DetalleMovimientoScreen() {
 
   const [editVisible, setEditVisible] = useState(false);
   const [descripcion, setDescripcion] = useState(initialMovimiento?.descripcion || "");
-  const [monto, setMonto] = useState(String(initialMovimiento?.monto || ""));
+  const [monto, setMonto] = useState(formatMoneyNumber(initialMovimiento?.monto, user?.moneda));
   const [fecha, setFecha] = useState(
     initialMovimiento?.fecha
       ? initialMovimiento.fecha.split("T")[0]
@@ -75,7 +77,7 @@ export default function DetalleMovimientoScreen() {
     if (!mov) return;
     setMovimiento(mov);
     setDescripcion(mov.descripcion || "");
-    setMonto(String(mov.monto || ""));
+    setMonto(formatMoneyNumber(mov.monto, user?.moneda));
     setFecha(mov.fecha ? mov.fecha.split("T")[0] : new Date().toISOString().split("T")[0]);
   }, [route.params?.movimiento?.id, route.params?._ts]);
 
@@ -110,7 +112,7 @@ export default function DetalleMovimientoScreen() {
   };
 
   const handleGuardar = async () => {
-    const montoNum = parseFloat(monto);
+    const montoNum = parseMoneyDisplay(monto, user?.moneda);
     if (isNaN(montoNum) || montoNum <= 0) {
       universalAlert("Error", "El monto debe ser un número mayor a 0.");
       return;
@@ -145,7 +147,7 @@ export default function DetalleMovimientoScreen() {
 
   const openEdit = () => {
     setDescripcion(movimiento.descripcion || "");
-    setMonto(String(movimiento.monto || ""));
+    setMonto(formatMoneyNumber(movimiento.monto, user?.moneda));
     setFecha(
       movimiento.fecha
         ? movimiento.fecha.split("T")[0]
@@ -282,13 +284,12 @@ export default function DetalleMovimientoScreen() {
 
             {/* Monto */}
             <Text style={[styles.modalLabel, { color: theme.textSecondary }]}>Monto</Text>
-            <TextInput
+            <MoneyInput
               style={[styles.input, { backgroundColor: theme.background, color: theme.text }]}
               placeholderTextColor={theme.placeholder}
               placeholder="0.00"
               value={monto}
               onChangeText={setMonto}
-              keyboardType="numeric"
             />
 
             {/* Fecha */}

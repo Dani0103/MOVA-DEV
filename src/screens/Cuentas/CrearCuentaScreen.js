@@ -16,6 +16,8 @@ import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
 import FormSelect from "../../components/form/FormSelect";
 import { useTheme } from "../../theme/useTheme";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay, formatMoneyNumber } from "../../utils/moneyFormatter";
 
 export default function CrearCuentaScreen() {
   const theme = useTheme();
@@ -41,7 +43,7 @@ export default function CrearCuentaScreen() {
   // Inicializamos los estados con los datos de la cuenta si estamos editando
   const [nombre, setNombre] = useState(cuentaAEditar?.nombre || "");
   const [saldo, setSaldo] = useState(
-    cuentaAEditar?.saldo_actual?.toString() || "",
+    cuentaAEditar?.saldo_actual ? formatMoneyNumber(cuentaAEditar.saldo_actual, user?.moneda) : "",
   );
   const [tipoId, setTipoId] = useState(cuentaAEditar?.tipo_cuenta?.id || null);
   const [monedaId, setMonedaId] = useState(cuentaAEditar?.moneda?.id || null);
@@ -109,7 +111,7 @@ export default function CrearCuentaScreen() {
         tipo_cuenta_id: tipoId,
         moneda_id: monedaId,
         nombre: nombre,
-        saldo_actual: parseFloat(saldo),
+        saldo_actual: parseMoneyDisplay(saldo, user?.moneda),
         color_hex: colorHex,
       };
 
@@ -235,18 +237,12 @@ export default function CrearCuentaScreen() {
       <Text style={[styles.label, { color: theme.textSecondary }]}>
         {esEdicion ? "Saldo Actual *" : "Saldo Inicial *"}
       </Text>
-      <TextInput
+      <MoneyInput
         placeholder="0.00"
         placeholderTextColor={theme.placeholder}
         style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
-        keyboardType="decimal-pad"
         value={saldo}
-        onChangeText={(text) => {
-          const cleanNumber = text.replace(/[^0-9.]/g, "");
-          if ((cleanNumber.match(/\./g) || []).length <= 1) {
-            setSaldo(cleanNumber);
-          }
-        }}
+        onChangeText={setSaldo}
       />
 
       <Text style={[styles.label, { color: theme.textSecondary }]}>Color Identificador *</Text>

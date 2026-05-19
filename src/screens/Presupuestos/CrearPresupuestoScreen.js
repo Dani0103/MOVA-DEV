@@ -16,6 +16,8 @@ import { createPresupuesto } from "../../services/PresupuestosService";
 import { useCategories } from "../../context/CategoryContext";
 import DatePickerInput from "../../components/ui/DatePickerInput";
 import { useTheme } from "../../theme/useTheme";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay } from "../../utils/moneyFormatter";
 
 const NOTIFY_OPTIONS = [50, 75, 80, 90];
 
@@ -33,7 +35,7 @@ function getLastDayOfMonth() {
 export default function CrearPresupuestoScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { categorias, refreshCategories } = useCategories();
 
   const [montoLimite, setMontoLimite] = useState("");
@@ -52,7 +54,7 @@ export default function CrearPresupuestoScreen() {
   const gastoCategories = categorias.filter((c) => c.tipo === "gasto");
 
   const handleGuardar = async () => {
-    if (!montoLimite || isNaN(parseFloat(montoLimite)) || parseFloat(montoLimite) <= 0) {
+    if (!montoLimite || parseMoneyDisplay(montoLimite, user?.moneda) <= 0) {
       universalAlert("Error", "El monto límite es obligatorio y debe ser mayor a 0.");
       return;
     }
@@ -68,7 +70,7 @@ export default function CrearPresupuestoScreen() {
     try {
       setSubmitting(true);
       await createPresupuesto(token, {
-        monto_limite: montoLimite,
+        monto_limite: parseMoneyDisplay(montoLimite, user?.moneda),
         periodo_inicio: periodoInicio,
         periodo_fin: periodoFin,
         notificar_al_llegar_al_percent: notifyPct,
@@ -105,10 +107,9 @@ export default function CrearPresupuestoScreen() {
 
       {/* Monto límite */}
       <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Límite *</Text>
-      <TextInput
+      <MoneyInput
         placeholder="0.00"
         placeholderTextColor={theme.placeholder}
-        keyboardType="numeric"
         style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         value={montoLimite}
         onChangeText={setMontoLimite}

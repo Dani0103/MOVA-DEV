@@ -15,13 +15,15 @@ import { useAuth } from "../../context/AuthContext";
 import { universalAlert } from "../../utils/universalAlert";
 import { createAporte } from "../../services/MetasService";
 import { useTheme } from "../../theme/useTheme";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay } from "../../utils/moneyFormatter";
 
 export default function AddAhorroScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const { meta } = route.params; // La meta a la que le sumaremos dinero
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { cuentas } = useAccounts();
 
   const [monto, setMonto] = useState("");
@@ -29,7 +31,7 @@ export default function AddAhorroScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleGuardar = async () => {
-    if (!monto || parseFloat(monto) <= 0) {
+    if (!monto || parseMoneyDisplay(monto, user?.moneda) <= 0) {
       universalAlert("Error", "Ingresa un monto válido para ahorrar.");
       return;
     }
@@ -40,10 +42,10 @@ export default function AddAhorroScreen() {
 
     try {
       setSubmitting(true);
-      await createAporte(token, meta.id, { monto });
+      await createAporte(token, meta.id, { monto: parseMoneyDisplay(monto, user?.moneda) });
       universalAlert(
         "¡Ahorro registrado!",
-        `Has sumado $${parseFloat(monto).toLocaleString()} a tu meta: ${meta.nombre}`,
+        `Has sumado $${parseMoneyDisplay(monto, user?.moneda).toLocaleString()} a tu meta: ${meta.nombre}`,
         [{ text: "Genial", onPress: () => navigation.goBack() }],
       );
     } catch (error) {
@@ -79,11 +81,10 @@ export default function AddAhorroScreen() {
         {/* Input de Monto */}
         <View style={styles.amountContainer}>
           <Text style={[styles.currencySymbol, { color: theme.text }]}>$</Text>
-          <TextInput
+          <MoneyInput
             style={[styles.amountInput, { color: theme.text }]}
             placeholder="0"
             placeholderTextColor={theme.cardSecondary}
-            keyboardType="numeric"
             value={monto}
             onChangeText={setMonto}
             autoFocus

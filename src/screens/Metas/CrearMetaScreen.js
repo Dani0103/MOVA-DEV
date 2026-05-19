@@ -14,6 +14,8 @@ import { universalAlert } from "../../utils/universalAlert";
 import { useAuth } from "../../context/AuthContext";
 import { createMeta } from "../../services/MetasService";
 import { useTheme } from "../../theme/useTheme";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay } from "../../utils/moneyFormatter";
 
 const COLORES_METAS = [
   "#38BDF8",
@@ -38,7 +40,7 @@ const ICONOS_METAS = [
 export default function CrearMetaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [nombre, setNombre] = useState("");
   const [montoObjetivo, setMontoObjetivo] = useState("");
   const [montoInicial, setMontoInicial] = useState("");
@@ -47,7 +49,7 @@ export default function CrearMetaScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleGuardar = async () => {
-    if (!nombre || !montoObjetivo) {
+    if (!nombre || !montoObjetivo || parseMoneyDisplay(montoObjetivo, user?.moneda) <= 0) {
       universalAlert(
         "Error",
         "El nombre y el monto objetivo son obligatorios.",
@@ -59,8 +61,8 @@ export default function CrearMetaScreen() {
       setSubmitting(true);
       await createMeta(token, {
         nombre,
-        montoObjetivo,
-        montoInicial,
+        montoObjetivo: parseMoneyDisplay(montoObjetivo, user?.moneda),
+        montoInicial: parseMoneyDisplay(montoInicial, user?.moneda),
         color: colorSelected,
         icono: iconSelected,
       });
@@ -99,7 +101,7 @@ export default function CrearMetaScreen() {
         </View>
         <Text style={[styles.previewTitle, { color: theme.text }]}>{nombre || "Título de la meta"}</Text>
         <Text style={[styles.previewSub, { color: theme.primary }]}>
-          $ {(parseFloat(montoObjetivo) || 0).toLocaleString()}
+          $ {(parseMoneyDisplay(montoObjetivo, user?.moneda) || 0).toLocaleString()}
         </Text>
       </View>
 
@@ -115,10 +117,9 @@ export default function CrearMetaScreen() {
       <View style={styles.row}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Objetivo</Text>
-          <TextInput
+          <MoneyInput
             placeholder="0.00"
             placeholderTextColor={theme.placeholder}
-            keyboardType="numeric"
             style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
             value={montoObjetivo}
             onChangeText={setMontoObjetivo}
@@ -127,10 +128,9 @@ export default function CrearMetaScreen() {
         <View style={{ width: 15 }} />
         <View style={{ flex: 1 }}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>Ahorro Inicial</Text>
-          <TextInput
+          <MoneyInput
             placeholder="Opcional"
             placeholderTextColor={theme.placeholder}
-            keyboardType="numeric"
             style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
             value={montoInicial}
             onChangeText={setMontoInicial}

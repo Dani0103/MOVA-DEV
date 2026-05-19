@@ -15,6 +15,8 @@ import { useAuth } from "../../context/AuthContext";
 import { updateMeta } from "../../services/MetasService";
 import { useTheme } from "../../theme/useTheme";
 import DatePickerInput from "../../components/ui/DatePickerInput";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay, formatMoneyNumber } from "../../utils/moneyFormatter";
 
 const COLORES_METAS = ["#38BDF8", "#4ADE80", "#FB923C", "#A78BFA", "#F472B6", "#FACC15"];
 const ICONOS_METAS = [
@@ -26,12 +28,12 @@ export default function EditarMetaScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const { meta } = route.params;
 
   const [nombre, setNombre] = useState(meta.nombre ?? "");
-  const [montoObjetivo, setMontoObjetivo] = useState(String(meta.objetivo ?? ""));
+  const [montoObjetivo, setMontoObjetivo] = useState(formatMoneyNumber(meta.objetivo, user?.moneda));
   const [fechaLimite, setFechaLimite] = useState(meta.fecha_limite ?? "");
   const [colorSelected, setColorSelected] = useState(meta.color ?? COLORES_METAS[0]);
   const [iconSelected, setIconSelected] = useState(meta.icono ?? ICONOS_METAS[0]);
@@ -42,7 +44,7 @@ export default function EditarMetaScreen() {
       universalAlert("Error", "El nombre es obligatorio.");
       return;
     }
-    if (!montoObjetivo || parseFloat(montoObjetivo) <= 0) {
+    if (!montoObjetivo || parseMoneyDisplay(montoObjetivo, user?.moneda) <= 0) {
       universalAlert("Error", "Ingresa un monto objetivo válido.");
       return;
     }
@@ -51,7 +53,7 @@ export default function EditarMetaScreen() {
       setSubmitting(true);
       await updateMeta(token, meta.id, {
         nombre: nombre.trim(),
-        monto_objetivo: parseFloat(montoObjetivo),
+        monto_objetivo: parseMoneyDisplay(montoObjetivo, user?.moneda),
         fecha_objetivo: fechaLimite || null,
         color: colorSelected,
         icono: iconSelected,
@@ -92,7 +94,7 @@ export default function EditarMetaScreen() {
         </View>
         <Text style={[styles.previewTitle, { color: theme.text }]}>{nombre || "Título de la meta"}</Text>
         <Text style={[styles.previewSub, { color: colorSelected }]}>
-          $ {(parseFloat(montoObjetivo) || 0).toLocaleString("es-CO", { minimumFractionDigits: 0 })}
+          $ {(parseMoneyDisplay(montoObjetivo, user?.moneda) || 0).toLocaleString("es-CO", { minimumFractionDigits: 0 })}
         </Text>
       </View>
 
@@ -106,10 +108,9 @@ export default function EditarMetaScreen() {
       />
 
       <Text style={[styles.label, { color: theme.textSecondary }]}>Monto Objetivo</Text>
-      <TextInput
+      <MoneyInput
         placeholder="0"
         placeholderTextColor={theme.textMuted}
-        keyboardType="numeric"
         style={[styles.input, { backgroundColor: theme.card, color: theme.text }]}
         value={montoObjetivo}
         onChangeText={setMontoObjetivo}

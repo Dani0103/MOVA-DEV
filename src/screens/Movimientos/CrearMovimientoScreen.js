@@ -15,6 +15,8 @@ import { universalAlert } from "../../utils/universalAlert";
 import { TypeMovement } from "../../services/CatalogoService";
 import { useTheme } from "../../theme/useTheme";
 import DatePickerInput from "../../components/ui/DatePickerInput";
+import MoneyInput from "../../components/ui/MoneyInput";
+import { parseMoneyDisplay } from "../../utils/moneyFormatter";
 
 // Supongamos que recibes 'categorias' y 'setCateogrias' como props igual que las cuentas
 export default function CrearMovimientoScreen({
@@ -27,7 +29,7 @@ export default function CrearMovimientoScreen({
   onSuccess,
 }) {
   const theme = useTheme();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
@@ -42,13 +44,13 @@ export default function CrearMovimientoScreen({
 
   const handleGuardar = async () => {
     if (!descripcion.trim()) return setError("La descripción es obligatoria");
-    if (!monto || parseFloat(monto) <= 0)
+    if (!monto || parseMoneyDisplay(monto, user?.moneda) <= 0)
       return setError("Ingresa un monto válido");
     if (!categoriaSeleccionada) return setError("Selecciona una categoría");
     if (!cuentaSeleccionada) return setError("Selecciona una cuenta");
 
     setError("");
-    const montoNum = parseFloat(monto);
+    const montoNum = parseMoneyDisplay(monto, user?.moneda);
 
     const dataToSend = {
       // Si es gasto, sale de origen. Si es ingreso, entra a destino.
@@ -146,10 +148,9 @@ export default function CrearMovimientoScreen({
         {/* MONTO */}
         <View style={styles.montoContainer}>
           <Text style={[styles.currencySymbol, { color: theme.primary }]}>$</Text>
-          <TextInput
+          <MoneyInput
             placeholder="0"
             placeholderTextColor="#475569"
-            keyboardType="numeric"
             style={[styles.montoInput, { color: theme.text, borderColor: theme.border }]}
             value={monto}
             onChangeText={(v) => {
