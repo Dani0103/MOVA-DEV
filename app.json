@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "app-financiera",
-    "slug": "app-financiera",
+    "name": "MOVA",
+    "slug": "mova",
+    "scheme": "mova",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,15 +11,17 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0F172A"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "xyz.dalioss.mova"
     },
     "android": {
+      "package": "xyz.dalioss.mova",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0F172A"
       },
       "edgeToEdgeEnabled": true
     },
