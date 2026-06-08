@@ -67,3 +67,14 @@ export async function toggleCategoriaActiva(id, activa, token) {
     body: JSON.stringify({ activa }),
   });
 }
+
+export async function reactivateCategory(id, token) {
+  return await apiFetch(`/categorias/${id}/reactivar`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  });
+}

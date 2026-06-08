@@ -56,36 +56,86 @@ export default function CategoriasScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Selector de Tipo (Tabs) */}
-      <View style={[styles.tabContainer, { backgroundColor: theme.card }]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
-          {TRANSACTION_TYPES.map((type) => (
+      {/* Selector de Tipo — carrusel estilo Netflix: 3 visibles + flechas + loop */}
+      {(() => {
+        const VISIBLE = 3;
+        const total = TRANSACTION_TYPES.length;
+        const currentIdx = TRANSACTION_TYPES.findIndex((t) => t.id === tab);
+        const safeIdx = currentIdx >= 0 ? currentIdx : 0;
+
+        // Calcula el rango visible: el seleccionado va al centro siempre que se puede
+        // y aplica modulo para que sea circular
+        const startIdx = safeIdx - 1;
+        const visibles = Array.from({ length: VISIBLE }, (_, i) => {
+          const wrapped = ((startIdx + i) % total + total) % total;
+          return { ...TRANSACTION_TYPES[wrapped], _idx: wrapped };
+        });
+
+        const goPrev = () => {
+          const next = ((safeIdx - 1) % total + total) % total;
+          setTab(TRANSACTION_TYPES[next].id);
+        };
+        const goNext = () => {
+          const next = (safeIdx + 1) % total;
+          setTab(TRANSACTION_TYPES[next].id);
+        };
+
+        return (
+          <View style={styles.carouselWrap}>
             <TouchableOpacity
-              key={type.id}
-              style={[
-                styles.tab,
-                tab === type.id && [styles.tabActive, { backgroundColor: theme.cardSecondary }],
-                { minWidth: 100 }, // Asegura espacio para el texto
-              ]}
-              onPress={() => setTab(type.id)}
+              onPress={goPrev}
+              style={[styles.carouselArrow, { backgroundColor: theme.card }]}
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+              accessibilityLabel="Tipo anterior"
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: theme.textSecondary },
-                  tab === type.id && { color: type.color || theme.primary }, // Usa el color de la constante
-                ]}
-              >
-                {type.label}
-              </Text>
+              <Ionicons name="chevron-back" size={22} color={theme.text} />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+
+            <View style={styles.carouselTrack}>
+              {visibles.map((type, i) => {
+                const isActive = type.id === tab;
+                return (
+                  <TouchableOpacity
+                    key={`${type.id}-${i}`}
+                    style={[
+                      styles.carouselTab,
+                      { backgroundColor: theme.card },
+                      isActive && {
+                        backgroundColor: (type.color || theme.primary) + "20",
+                        borderColor: type.color || theme.primary,
+                      },
+                    ]}
+                    onPress={() => setTab(type.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.carouselTabText,
+                        { color: theme.textSecondary },
+                        isActive && {
+                          color: type.color || theme.primary,
+                          fontWeight: "800",
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity
+              onPress={goNext}
+              style={[styles.carouselArrow, { backgroundColor: theme.card }]}
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+              accessibilityLabel="Tipo siguiente"
+            >
+              <Ionicons name="chevron-forward" size={22} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+        );
+      })()}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -115,58 +165,70 @@ export default function CategoriasScreen() {
         ) : (
           <>
             {/* Categorías activas */}
-            <View style={styles.grid}>
-              {activas.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[styles.categoryCard, { backgroundColor: theme.card }]}
-                  onPress={() => navigation.navigate("DetalleCategoria", { categoria: cat })}
-                >
-                  <View style={[styles.iconCircle, { backgroundColor: cat.color_hex + "20" }]}>
-                    <Ionicons name={getIconName(cat.icono)} size={24} color={cat.color_hex} />
-                  </View>
-                  <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
-                    {cat.nombre}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Categorías inactivas */}
-            {inactivas.length > 0 && (
-              <>
-                <View style={styles.inactiveDivider}>
-                  <View style={[styles.inactiveLine, { backgroundColor: theme.border }]} />
-                  <Text style={[styles.inactiveLabel, { color: theme.textMuted }]}>
-                    Desactivadas ({inactivas.length})
-                  </Text>
-                  <View style={[styles.inactiveLine, { backgroundColor: theme.border }]} />
+            {activas.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <View style={[styles.emptyIconCircle, { backgroundColor: theme.card }]}>
+                  <Ionicons name="folder-open-outline" size={60} color="#475569" />
                 </View>
-
-                <View style={styles.grid}>
-                  {inactivas.map((cat) => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[styles.categoryCard, styles.categoryCardInactive, { backgroundColor: theme.card }]}
-                      onPress={() => navigation.navigate("DetalleCategoria", { categoria: cat })}
-                    >
-                      {/* Overlay badge */}
-                      <View style={styles.inactiveBadge}>
-                        <Ionicons name="pause-circle" size={14} color="#FB923C" />
-                      </View>
-                      <View style={[styles.iconCircle, { backgroundColor: cat.color_hex + "10" }]}>
-                        <Ionicons name={cat.icono} size={24} color={cat.color_hex + "80"} />
-                      </View>
-                      <Text style={[styles.categoryName, { color: theme.textMuted }]} numberOfLines={1}>
-                        {cat.nombre}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                  No hay categorías activas
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                  {inactivas.length > 0
+                    ? `Tienes ${inactivas.length} desactivadas. Puedes reactivarlas o crear nuevas.`
+                    : `Aún no has agregado categorías de tipo ${tab}.`}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.grid}>
+                {activas.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[styles.categoryCard, { backgroundColor: theme.card }]}
+                    onPress={() => navigation.navigate("DetalleCategoria", { categoria: cat })}
+                  >
+                    <View style={[styles.iconCircle, { backgroundColor: cat.color_hex + "20" }]}>
+                      <Ionicons name={getIconName(cat.icono)} size={24} color={cat.color_hex} />
+                    </View>
+                    <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
+                      {cat.nombre}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
           </>
         )}
+
+        {/* Botón: Ver categorías inactivas — solo cuando ya cargaron */}
+        {!loading && (
+          <TouchableOpacity
+            style={[
+              styles.inactiveButton,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+            onPress={() => navigation.navigate("CategoriasInactivas")}
+          >
+            <View style={styles.inactiveButtonLeft}>
+              <View style={styles.inactiveIconWrap}>
+                <Ionicons name="pause-circle-outline" size={20} color="#FB923C" />
+              </View>
+              <View>
+                <Text style={[styles.inactiveButtonTitle, { color: theme.text }]}>
+                  Categorías inactivas
+                </Text>
+                <Text style={[styles.inactiveButtonSubtitle, { color: theme.textMuted }]}>
+                  {inactivas.length > 0
+                    ? `${inactivas.length} desactivada${inactivas.length === 1 ? "" : "s"} de ${tab}`
+                    : "No tienes inactivas"}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
+          </TouchableOpacity>
+        )}
+
+        <View style={{ height: 30 }} />
       </ScrollView>
     </View>
   );
@@ -195,23 +257,41 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  tabContainer: {
+  // ━━━ Carrusel de tipos (Netflix-style) ━━━
+  carouselWrap: {
     flexDirection: "row",
-    borderRadius: 12,
-    padding: 5,
+    alignItems: "center",
+    gap: 8,
     marginBottom: 20,
   },
-  tab: {
+  carouselArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  carouselTrack: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 6,
+  },
+  carouselTab: {
     flex: 1,
     paddingVertical: 10,
+    paddingHorizontal: 6,
     alignItems: "center",
     borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    minHeight: 40,
+    justifyContent: "center",
   },
-  tabActive: {},
-  tabText: {
+  carouselTabText: {
     fontWeight: "600",
+    fontSize: 12,
+    textAlign: "center",
   },
-  tabTextActive: {},
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -302,5 +382,36 @@ const styles = StyleSheet.create({
   emptyButtonText: {
     fontWeight: "600",
     fontSize: 15,
+  },
+  inactiveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 12,
+    borderWidth: 1,
+  },
+  inactiveButtonLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  inactiveIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "rgba(251,146,60,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inactiveButtonTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  inactiveButtonSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });

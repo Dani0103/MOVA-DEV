@@ -2,7 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CategoriasScreen from "../screens/Categorias/CategoriasScreen";
 import CrearCategoriaScreen from "../screens/Categorias/CrearCategoriaScreen";
 import DetalleCategoriaScreen from "../screens/Categorias/DetalleCategoriaScreen";
-// import DetalleCategoriaScreen from "../screens/Categorias/DetalleCategoriaScreen"; // Opcional
+import CategoriasInactivasScreen from "../screens/Categorias/CategoriasInactivasScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -15,7 +15,10 @@ export default function CategoriasStack() {
         name="DetalleCategoria"
         component={DetalleCategoriaScreen}
       />
-      {/* Podrías agregar una vista de detalle para ver estadísticas por categoría */}
+      <Stack.Screen
+        name="CategoriasInactivas"
+        component={CategoriasInactivasScreen}
+      />
     </Stack.Navigator>
   );
 }

@@ -60,7 +60,27 @@ export async function updateAccount(cuenta, formData, token) {
 
 export async function ArchiveAccount(cuenta, token) {
   return await apiFetch(`/cuentas/${cuenta}/archivar`, {
-    // Quitamos /api si ya está en la base config
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  });
+}
+
+export async function GetInactiveAccounts(token) {
+  return await apiFetch("/cuentas/inactivas", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+}
+
+export async function ReactivateAccount(cuenta, token) {
+  return await apiFetch(`/cuentas/${cuenta}/reactivar`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,

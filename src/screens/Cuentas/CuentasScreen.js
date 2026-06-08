@@ -157,6 +157,36 @@ export default function CuentasScreen() {
             <Text style={[styles.emptyText, { color: theme.textMuted }]}>No hay cuentas registradas</Text>
           </View>
         )}
+
+        {/* Botón: Ver cuentas inactivas — solo cuando ya cargaron las activas */}
+        {!loading && (
+          <TouchableOpacity
+            style={[
+              styles.inactiveButton,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+            onPress={() => navigation.navigate("CuentasInactivas")}
+          >
+            <View style={styles.inactiveButtonLeft}>
+              <View style={styles.inactiveIconWrap}>
+                <Ionicons name="archive-outline" size={20} color="#FB923C" />
+              </View>
+              <View>
+                <Text style={[styles.inactiveButtonTitle, { color: theme.text }]}>
+                  Cuentas inactivas
+                </Text>
+                <Text
+                  style={[styles.inactiveButtonSubtitle, { color: theme.textMuted }]}
+                >
+                  Cuentas archivadas o que ya no usas
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
+          </TouchableOpacity>
+        )}
+
+        <View style={{ height: 30 }} />
       </ScrollView>
     </View>
   );
@@ -240,5 +270,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
     textAlign: "center",
+  },
+  inactiveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 8,
+    borderWidth: 1,
+  },
+  inactiveButtonLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  inactiveIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "rgba(251,146,60,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inactiveButtonTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  inactiveButtonSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });
