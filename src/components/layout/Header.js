@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme/useTheme";
+import { useThemeContext } from "../../context/ThemeContext";
 
 // Diccionario de manuales. Las llaves deben coincidir con lo que devuelve 'formatTitle'
 const MANUAL_CONTENT = {
@@ -93,6 +94,7 @@ const MANUAL_CONTENT = {
 
 export default function Header() {
   const theme = useTheme();
+  const { isDark, toggleTheme } = useThemeContext();
   const { user, logout } = useAuth();
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
@@ -173,11 +175,23 @@ export default function Header() {
           </View>
         )}
 
-        {/* Acciones Derecha (Ayuda + Salir) */}
+        {/* Acciones Derecha (Tema + Ayuda + Salir) */}
         <View style={styles.rightActions}>
           <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.iconBtn}
+            accessibilityLabel={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          >
+            <Ionicons
+              name={isDark ? "sunny-outline" : "moon-outline"}
+              size={24}
+              color={isDark ? "#F59E0B" : theme.primary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            style={styles.helpBtn}
+            style={styles.iconBtn}
           >
             <Ionicons name="help-circle-outline" size={26} color={theme.primary} />
           </TouchableOpacity>
@@ -264,11 +278,10 @@ const styles = StyleSheet.create({
   rightActions: {
     flexDirection: "row",
     alignItems: "center",
-    width: 70, // Fija el ancho para balancear con el leftBtn
     justifyContent: "flex-end",
-    gap: 10,
+    gap: 8,
   },
-  helpBtn: {
+  iconBtn: {
     padding: 2,
   },
   logoutBtn: {
