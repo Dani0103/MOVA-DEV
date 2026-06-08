@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -24,6 +24,51 @@ const TIPO_ICONS = {
   prestamo:     "cash-outline",
 };
 
+const NOMBRES_MES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+/**
+ * Construye la lista de meses desde la fecha de registro del usuario hasta el mes actual.
+ * Retorna en orden inverso (mes actual primero) para que el filtro arranque por defecto en hoy.
+ */
+function buildMesesDisponibles(fechaRegistro) {
+  const now = new Date();
+  const inicio = fechaRegistro ? new Date(fechaRegistro) : now;
+
+  // Si la fecha es invalida, caemos al mes actual
+  if (isNaN(inicio.getTime())) {
+    return [{ year: now.getFullYear(), month: now.getMonth() }];
+  }
+
+  const meses = [];
+  let y = now.getFullYear();
+  let m = now.getMonth();
+  const yIni = inicio.getFullYear();
+  const mIni = inicio.getMonth();
+
+  while (y > yIni || (y === yIni && m >= mIni)) {
+    meses.push({ year: y, month: m });
+    m -= 1;
+    if (m < 0) { m = 11; y -= 1; }
+  }
+
+  return meses;
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function rangoMes(year, month) {
+  const desde = `${year}-${pad2(month + 1)}-01`;
+  // Ultimo dia del mes: dia 0 del mes siguiente
+  const ultimoDia = new Date(year, month + 1, 0).getDate();
+  const hasta = `${year}-${pad2(month + 1)}-${pad2(ultimoDia)}`;
+  return { desde, hasta };
+}
+
 export default function HomeScreen() {
   const theme = useTheme();
   const { isDark } = useThemeContext();
@@ -43,23 +88,39 @@ export default function HomeScreen() {
 
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const fetchData = async () => {
+  // Lista de meses disponibles segun la fecha de registro del usuario
+  const mesesDisponibles = useMemo(
+    () => buildMesesDisponibles(user?.creado_en),
+    [user?.creado_en]
+  );
+
+  // Por defecto: mes actual (primer elemento de la lista)
+  const [mesSel, setMesSel] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
+  const fetchData = async (mesObj = mesSel) => {
     try {
       setLoading(true);
 
-      const response = await GetDashboard(token);
+      const { desde, hasta } = rangoMes(mesObj.year, mesObj.month);
+      const response = await GetDashboard(token, {
+        fecha_desde: desde,
+        fecha_hasta: hasta,
+      });
 
       // Extraemos el objeto data dentro de la respuesta
       const apiData = response?.data;
 
       if (apiData) {
         setData({
-          // Convertimos los strings numéricos ("3000.00") a números reales
-          saldoDisponible: parseFloat(apiData.salario_disponible || 0),
+          // "Saldo Disponible" = patrimonio total en todas las cuentas (apiData.ahorros)
+          saldoDisponible: parseFloat(apiData.ahorros || 0),
           ingresos: parseFloat(apiData.ingresos || 0),
           gastos: parseFloat(apiData.gastos || 0),
-          ahorro: parseFloat(apiData.ahorros || 0),
-          // Mapeamos los movimientos verificando que sea un Array
+          // "Ahorro del Mes" = ingresos - gastos del periodo filtrado
+          ahorro: parseFloat(apiData.salario_disponible || 0),
           movimientos: Array.isArray(apiData.ultimos_movimientos)
             ? apiData.ultimos_movimientos
             : [],
@@ -73,10 +134,32 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(mesSel);
+  }, [token, mesSel.year, mesSel.month]);
+
+  useEffect(() => {
     refreshCategories(token, user.id);
     refreshAccounts(token);
   }, [token]);
+
+  const handleSelectMes = (m) => {
+    setMesSel(m);
+  };
+
+  const esMesActual = (m) => {
+    const now = new Date();
+    return m.year === now.getFullYear() && m.month === now.getMonth();
+  };
+
+  const labelMes = (m) => {
+    const now = new Date();
+    const esActual = m.year === now.getFullYear() && m.month === now.getMonth();
+    if (esActual) return "Este mes";
+    const esMismoAnio = m.year === now.getFullYear();
+    return esMismoAnio
+      ? NOMBRES_MES[m.month].slice(0, 3)
+      : `${NOMBRES_MES[m.month].slice(0, 3)} ${String(m.year).slice(-2)}`;
+  };
 
   if (loading) {
     return (
@@ -91,50 +174,162 @@ export default function HomeScreen() {
     );
   }
 
+  const ahorroPositivo = (data.ahorro || 0) >= 0;
+  const ahorroColor = ahorroPositivo ? "#4ADE80" : "#F87171";
+  const cuentasActivasCount = Array.isArray(cuentas)
+    ? cuentas.filter((c) => c.activa !== false && c.archivada !== true).length
+    : 0;
+  const mesActualSel = mesesDisponibles.find(
+    (m) => m.year === mesSel.year && m.month === mesSel.month
+  );
+  const tituloMes = mesActualSel
+    ? esMesActual(mesActualSel)
+      ? "Este mes"
+      : `${NOMBRES_MES[mesSel.month]} ${mesSel.year}`
+    : "";
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Saldo con validación de número */}
-        <View style={[styles.balanceCard, { backgroundColor: theme.card }]}>
-          <Text style={[styles.balanceLabel, { color: theme.textSecondary }]}>Saldo Disponible</Text>
-          <Text style={[styles.balanceAmount, { color: theme.primary }]}>
+        {/* ━━━ HERO: Patrimonio total (no depende del mes) ━━━ */}
+        <View style={[styles.heroCard, { backgroundColor: theme.primary }]}>
+          <View style={styles.heroHeader}>
+            <Ionicons name="wallet-outline" size={18} color="rgba(15,23,42,0.7)" />
+            <Text style={styles.heroLabel}>Patrimonio total</Text>
+          </View>
+          <Text style={styles.heroAmount}>
             $ {(data.saldoDisponible || 0).toLocaleString()}
           </Text>
+          {cuentasActivasCount > 0 && (
+            <Text style={styles.heroFooter}>
+              en {cuentasActivasCount} cuenta{cuentasActivasCount === 1 ? "" : "s"} activa{cuentasActivasCount === 1 ? "" : "s"}
+            </Text>
+          )}
         </View>
 
-        <View style={styles.summaryRow}>
-          <View style={[styles.incomeCard, { backgroundColor: isDark ? "#064E3B" : "#F0FDF4" }]}>
-            <Text style={[styles.cardTitle, { color: isDark ? "white" : "#166534" }]}>Ingresos</Text>
-            <Text style={[styles.income, { color: isDark ? "#4ADE80" : "#16A34A" }]}>
-              +$ {(data.ingresos || 0).toLocaleString()}
-            </Text>
-          </View>
-
-          <View style={[styles.expenseCard, { backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2" }]}>
-            <Text style={[styles.cardTitle, { color: isDark ? "white" : "#991B1B" }]}>Gastos</Text>
-            <Text style={[styles.expense, { color: isDark ? "#F87171" : "#DC2626" }]}>
-              -$ {(data.gastos || 0).toLocaleString()}
-            </Text>
-          </View>
-        </View>
-
-        <View style={[styles.savingsCard, { backgroundColor: theme.card }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>Ahorro del Mes</Text>
-          <Text
-            style={[
-              styles.savingsAmount,
-              { color: (data.ahorro || 0) >= 0 ? "#4ADE80" : "#F87171" },
-            ]}
-          >
-            $ {(data.ahorro || 0).toLocaleString()}
+        {/* ━━━ Sección: Resumen del mes ━━━ */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={[styles.sectionTitleStrong, { color: theme.text }]}>
+            Resumen del mes
+          </Text>
+          <Text style={[styles.sectionSubtle, { color: theme.textSecondary }]}>
+            {tituloMes}
           </Text>
         </View>
 
-        {/* Sección de movimientos con validación de lista vacía */}
+        {/* Selector de mes */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.monthSelectorRow}
+          style={styles.monthSelectorScroll}
+        >
+          {mesesDisponibles.map((m) => {
+            const isSel = mesSel.year === m.year && mesSel.month === m.month;
+            return (
+              <TouchableOpacity
+                key={`${m.year}-${m.month}`}
+                onPress={() => handleSelectMes(m)}
+                style={[
+                  styles.monthChip,
+                  { backgroundColor: theme.card, borderColor: theme.border },
+                  isSel && { backgroundColor: theme.primary, borderColor: theme.primary },
+                ]}
+              >
+                {esMesActual(m) && (
+                  <Ionicons
+                    name="ellipse"
+                    size={6}
+                    color={isSel ? theme.background : "#4ADE80"}
+                    style={{ marginRight: 6 }}
+                  />
+                )}
+                <Text
+                  style={[
+                    styles.monthChipText,
+                    { color: theme.textSecondary },
+                    isSel && { color: theme.background, fontWeight: "700" },
+                  ]}
+                >
+                  {labelMes(m)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Ahorro del mes — destacado, color según signo */}
+        <View
+          style={[
+            styles.savingsHero,
+            {
+              backgroundColor: theme.card,
+              borderLeftColor: ahorroColor,
+            },
+          ]}
+        >
+          <View style={styles.savingsRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.savingsLabel, { color: theme.textSecondary }]}>
+                {ahorroPositivo ? "Ahorraste" : "Excediste"}
+              </Text>
+              <Text style={[styles.savingsAmountNew, { color: ahorroColor }]}>
+                {ahorroPositivo ? "+" : ""}$ {Math.abs(data.ahorro || 0).toLocaleString()}
+              </Text>
+            </View>
+            <View style={[styles.savingsBadge, { backgroundColor: ahorroColor + "20" }]}>
+              <Ionicons
+                name={ahorroPositivo ? "trending-up" : "trending-down"}
+                size={28}
+                color={ahorroColor}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Ingresos vs Gastos lado a lado */}
+        <View style={styles.summaryRow}>
+          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+            <View style={styles.statHeader}>
+              <View style={[styles.statIcon, { backgroundColor: (isDark ? "#4ADE80" : "#16A34A") + "20" }]}>
+                <Ionicons
+                  name="arrow-down"
+                  size={14}
+                  color={isDark ? "#4ADE80" : "#16A34A"}
+                />
+              </View>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+                Ingresos
+              </Text>
+            </View>
+            <Text style={[styles.statValue, { color: isDark ? "#4ADE80" : "#16A34A" }]}>
+              $ {(data.ingresos || 0).toLocaleString()}
+            </Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+            <View style={styles.statHeader}>
+              <View style={[styles.statIcon, { backgroundColor: (isDark ? "#F87171" : "#DC2626") + "20" }]}>
+                <Ionicons
+                  name="arrow-up"
+                  size={14}
+                  color={isDark ? "#F87171" : "#DC2626"}
+                />
+              </View>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+                Gastos
+              </Text>
+            </View>
+            <Text style={[styles.statValue, { color: isDark ? "#F87171" : "#DC2626" }]}>
+              $ {(data.gastos || 0).toLocaleString()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Sección de movimientos */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Últimos Movimientos</Text>
-            {/* <Text style={styles.seeAll}>Ver todos</Text> */}
           </View>
 
           {data.movimientos.length > 0 ? (
@@ -220,7 +415,7 @@ export default function HomeScreen() {
         categorias={categorias}
         loadingCuentas={loadingCuentas}
         loadingCategorias={loadingCategorias}
-        onSuccess={fetchData}
+        onSuccess={() => fetchData(mesSel)}
       />
 
       <TouchableOpacity
@@ -243,46 +438,146 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
-  balanceCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
+  // ━━━ HERO Patrimonio ━━━
+  heroCard: {
+    padding: 22,
+    borderRadius: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  balanceLabel: {},
-  balanceAmount: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 8,
+  heroHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
   },
+  heroLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(15,23,42,0.75)",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  heroAmount: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.5,
+  },
+  heroFooter: {
+    fontSize: 12,
+    color: "rgba(15,23,42,0.6)",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+
+  // ━━━ Encabezados de sección ━━━
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 12,
+  },
+  sectionTitleStrong: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  sectionSubtle: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+
+  // ━━━ Selector de mes ━━━
+  monthSelectorScroll: {
+    marginBottom: 16,
+  },
+  monthSelectorRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingRight: 20,
+  },
+  monthChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  monthChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  // ━━━ Ahorro del mes (destacado) ━━━
+  savingsHero: {
+    padding: 18,
+    borderRadius: 14,
+    borderLeftWidth: 4,
+    marginBottom: 12,
+  },
+  savingsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  savingsLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  savingsAmountNew: {
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  savingsBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // ━━━ Stats Ingresos/Gastos ━━━
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 24,
   },
-  incomeCard: {
-    backgroundColor: "#064E3B",
-    padding: 15,
-    borderRadius: 12,
-    width: "48%",
+  statCard: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 14,
   },
-  expenseCard: {
-    backgroundColor: "#7F1D1D",
-    padding: 15,
-    borderRadius: 12,
-    width: "48%",
+  statHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
   },
-  cardTitle: {
-    color: "white",
+  statIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  income: {
-    color: "#4ADE80",
-    fontWeight: "bold",
-    marginTop: 5,
+  statLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
-  expense: {
-    color: "#F87171",
-    fontWeight: "bold",
-    marginTop: 5,
+  statValue: {
+    fontSize: 18,
+    fontWeight: "700",
   },
   section: {
     marginTop: 10,
@@ -299,18 +594,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   transactionText: {},
-  savingsCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-
-  savingsAmount: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 8,
-  },
-
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
