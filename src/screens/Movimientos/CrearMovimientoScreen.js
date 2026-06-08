@@ -167,10 +167,9 @@ export default function CrearMovimientoScreen({
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               No se pudieron cargar los tipos de movimiento.
             </Text>
-            {/* Opcional: un botón para reintentar */}
             <TouchableOpacity
               style={styles.createBtn}
-              onPress={() => traerTipoMovimiento()} // Necesitarías sacar la función del useEffect para llamarla aquí
+              onPress={() => traerTipoMovimiento()}
             >
               <Text style={styles.createBtnText}>Reintentar</Text>
             </TouchableOpacity>
