@@ -59,3 +59,27 @@ export async function updateProfile(token, data) {
     body: JSON.stringify(data),
   });
 }
+
+// Cerrar sesion en TODOS los dispositivos
+export async function logoutAll(token) {
+  return await apiFetch("/auth/logout-all", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// Solicitar recuperacion de contrasena (envia email con link)
+export async function forgotPassword(email) {
+  return await apiFetch("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+// Restablecer contrasena con token
+export async function resetPassword({ token, email, password, password_confirmation }) {
+  return await apiFetch("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, email, password, password_confirmation }),
+  });
+}

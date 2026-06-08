@@ -8,6 +8,8 @@ import { useAuth } from "../context/AuthContext";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/ResetPasswordScreen";
 import AppLayout from "../components/layout/AppLayout";
 import PlanesScreen from "../screens/PlanesScreen";
 import { navigationRef } from "./RootNavigation";
@@ -70,6 +72,8 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>
         ) : isFirstLaunch ? (
           // 🟡 ESTADO 2: Usuario logueado + Primera vez en la app

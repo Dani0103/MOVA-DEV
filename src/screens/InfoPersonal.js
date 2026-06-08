@@ -15,12 +15,12 @@ import { useTheme } from "../theme/useTheme";
 import FloatingMenuButton from "../components/layout/FloatingMenuButton";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
-import { Paises, updateProfile } from "../services/authService";
+import { Paises, updateProfile, logoutAll } from "../services/authService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { universalAlert } from "../utils/universalAlert";
 
 export default function InfoPersonal() {
-  const { user, token, updateUser } = useAuth();
+  const { user, token, updateUser, logout } = useAuth();
   const { isDark, toggleTheme } = useThemeContext();
   const theme = useTheme();
 
@@ -62,6 +62,33 @@ export default function InfoPersonal() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleLogoutAll = () => {
+    universalAlert(
+      "¿Cerrar sesión en todos los dispositivos?",
+      "Se cerrarán todas las sesiones activas, incluida esta. Tendrás que volver a iniciar sesión.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sí, cerrar todas",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logoutAll(token);
+              universalAlert(
+                "Sesiones cerradas",
+                "Todas las sesiones fueron revocadas. Iniciando sesión de nuevo...",
+                [{ text: "OK", onPress: () => logout() }]
+              );
+            } catch (e) {
+              // Si el token ya esta revocado, igualmente forzamos logout local
+              await logout();
+            }
+          },
+        },
+      ]
+    );
   };
 
   const reiniciarTutorial = async () => {
@@ -193,6 +220,29 @@ export default function InfoPersonal() {
             </Text>
             <Text style={[styles.devSubtitle, { color: theme.textMuted }]}>
               Reinicia el tour guiado de la aplicación
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
+        </TouchableOpacity>
+
+        {/* Seguridad */}
+        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>
+          Seguridad
+        </Text>
+        <TouchableOpacity
+          style={[styles.devCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+          onPress={handleLogoutAll}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.devIconCircle, { backgroundColor: "#F8717120" }]}>
+            <Ionicons name="log-out-outline" size={22} color="#F87171" />
+          </View>
+          <View style={styles.devTextContainer}>
+            <Text style={[styles.devTitle, { color: theme.text }]}>
+              Cerrar sesión en todos los dispositivos
+            </Text>
+            <Text style={[styles.devSubtitle, { color: theme.textMuted }]}>
+              Revoca todas las sesiones activas
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
